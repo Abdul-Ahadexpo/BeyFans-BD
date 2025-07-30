@@ -88,12 +88,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             )}
           </button>
         </form>
-
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-400">
-            Default password: <span className="font-mono bg-gray-800 px-2 py-1 rounded text-green-400">admin1234</span>
-          </p>
-        </div>
       </div>
     </div>
   );
