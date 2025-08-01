@@ -6,6 +6,7 @@ import {
   getSettings, 
   getCategories,
   addProduct,
+  addReview,
   updateProduct,
   deleteProduct,
   deleteReview,
@@ -40,6 +41,7 @@ const AdminPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
+  const [showAddReview, setShowAddReview] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   
@@ -54,6 +56,12 @@ const AdminPage: React.FC = () => {
   const [newCategory, setNewCategory] = useState({
     name: '',
     productIds: [] as string[]
+  });
+
+  const [newReview, setNewReview] = useState({
+    userName: '',
+    text: '',
+    images: [] as string[]
   });
 
   useEffect(() => {
@@ -97,7 +105,11 @@ const AdminPage: React.FC = () => {
       setShowAddProduct(false);
     } catch (error) {
       console.error('Error adding product:', error);
-      alert('Failed to add product.');
+      if (error instanceof Error && error.message.includes('PERMISSION_DENIED')) {
+        alert('Permission denied. Please check your Firebase Realtime Database rules. Go to Firebase Console → Realtime Database → Rules and ensure write permissions are enabled for the products node.');
+      } else {
+        alert('Failed to add product. Please try again.');
+      }
     }
   };
 
@@ -167,6 +179,27 @@ const AdminPage: React.FC = () => {
     } catch (error) {
       console.error('Error adding category:', error);
       alert('Failed to add category.');
+    }
+  };
+
+  const handleAddReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newReview.userName.trim() || !newReview.text.trim()) return;
+
+    try {
+      const reviewId = await addReview(newReview);
+      const addedReview: Review = {
+        id: reviewId,
+        ...newReview,
+        createdAt: new Date()
+      };
+      
+      setReviews([addedReview, ...reviews]);
+      setNewReview({ userName: '', text: '', images: [] });
+      setShowAddReview(false);
+    } catch (error) {
+      console.error('Error adding review:', error);
+      alert('Failed to add review. Please try again.');
     }
   };
 
@@ -370,7 +403,78 @@ const AdminPage: React.FC = () => {
         {/* Reviews Tab */}
         {activeTab === 'reviews' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-white">Reviews Management</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-white">Reviews Management</h2>
+              <button
+                onClick={() => setShowAddReview(true)}
+                className="flex items-center gap-2 gradient-primary text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all duration-300 mobile-button"
+              >
+                <Plus className="w-5 h-5" />
+                Add Review
+              </button>
+            </div>
+
+            {/* Add Review Form */}
+            {showAddReview && (
+              <div className="glass-effect rounded-xl p-6 slide-up">
+                <h3 className="text-xl font-bold text-white mb-4">Add New Review</h3>
+                <form onSubmit={handleAddReview} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Reviewer Name
+                      </label>
+                      <input
+                        type="text"
+                        value={newReview.userName}
+                        onChange={(e) => setNewReview({ ...newReview, userName: e.target.value })}
+                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Review Text
+                    </label>
+                    <textarea
+                      value={newReview.text}
+                      onChange={(e) => setNewReview({ ...newReview, text: e.target.value })}
+                      rows={4}
+                      className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white resize-none mobile-button"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Review Images (Max 4)
+                    </label>
+                    <ImageUpload
+                      images={newReview.images}
+                      onImagesChange={(images) => setNewReview({ ...newReview, images })}
+                    />
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      type="submit"
+                      className="flex-1 gradient-primary text-white py-3 rounded-lg hover:shadow-lg transition-all duration-300 mobile-button"
+                    >
+                      Add Review
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddReview(false)}
+                      className="px-6 py-3 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700 transition-all duration-300 mobile-button"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
             
             <div className="space-y-4">
               {reviews.map(review => (

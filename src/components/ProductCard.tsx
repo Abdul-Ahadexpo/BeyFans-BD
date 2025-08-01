@@ -9,17 +9,17 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onViewProduct }) => {
   return (
-    <div className="glass-effect rounded-xl overflow-hidden card-hover fade-in">
+    <div className="glass-effect rounded-xl overflow-hidden card-hover fade-in flex flex-col h-full">
       <div className="relative overflow-hidden">
         <img
           src={product.images[0] || 'https://via.placeholder.com/300x200?text=No+Image'}
           alt={product.name}
-          className="w-full h-48 object-cover transition-transform duration-500 hover:scale-110"
+          className="w-full h-56 object-cover transition-transform duration-500 hover:scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300" />
       </div>
       
-      <div className="p-4">
+      <div className="p-4 flex flex-col flex-grow">
         <div className="flex flex-wrap gap-1 mb-2">
           {product.category.map((cat, index) => (
             <span
@@ -31,15 +31,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onViewProduct }) => 
           ))}
         </div>
         
-        <h3 className="font-bold text-lg text-white mb-2 line-clamp-2">
+        <h3 className="font-bold text-lg text-white mb-2 line-clamp-2 h-14">
           {product.name}
         </h3>
         
-        <p className="text-gray-300 text-sm mb-3 line-clamp-2">
+        <p className="text-gray-300 text-sm mb-3 line-clamp-3 h-16 flex-grow">
           {product.description}
         </p>
         
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mt-auto">
           <span className="text-2xl font-bold text-green-400">
             ৳{product.price}
           </span>

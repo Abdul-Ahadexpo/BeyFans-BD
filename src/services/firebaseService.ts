@@ -27,6 +27,8 @@ export const getProducts = async (): Promise<Product[]> => {
         .map(key => ({
           id: key,
           ...productsData[key],
+          category: productsData[key].category || [],
+          images: productsData[key].images || [],
           createdAt: new Date(productsData[key].createdAt)
         }))
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -48,6 +50,8 @@ export const getProduct = async (id: string): Promise<Product | null> => {
       return {
         id,
         ...productData,
+        category: productData.category || [],
+        images: productData.images || [],
         createdAt: new Date(productData.createdAt)
       };
     }
@@ -71,6 +75,9 @@ export const addProduct = async (product: Omit<Product, 'id' | 'createdAt'>): Pr
     return newProductRef.key!;
   } catch (error) {
     console.error('Error adding product:', error);
+    if (error instanceof Error && error.message.includes('PERMISSION_DENIED')) {
+      throw new Error('PERMISSION_DENIED: Firebase Realtime Database rules are blocking write access. Please update your database rules in Firebase Console.');
+    }
     throw error;
   }
 };
@@ -208,7 +215,8 @@ export const getCategories = async (): Promise<Category[]> => {
       const categoriesData = snapshot.val();
       return Object.keys(categoriesData).map(key => ({
         id: key,
-        ...categoriesData[key]
+        ...categoriesData[key],
+        productIds: categoriesData[key].productIds || []
       }));
     }
     return [];

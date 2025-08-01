@@ -88,6 +88,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             )}
           </button>
         </form>
+
+       
       </div>
     </div>
   );

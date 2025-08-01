@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Product, Category } from '../types';
-import { getProducts, getCategories } from '../services/firebaseService';
+import { Product, Category, Settings } from '../types';
+import { getProducts, getCategories, getSettings } from '../services/firebaseService';
 import ProductCard from '../components/ProductCard';
 import ProductModal from '../components/ProductModal';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -9,6 +9,7 @@ import { Search, Filter, Package } from 'lucide-react';
 const ProductsPage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [settings, setSettings] = useState<Settings | null>(null);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -19,15 +20,17 @@ const ProductsPage: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [productsData, categoriesData] = await Promise.all([
+        const [productsData, categoriesData, settingsData] = await Promise.all([
           getProducts(),
-          getCategories()
+          getCategories(),
+          getSettings()
         ]);
         
         // Shuffle products for random order on each reload
         const shuffledProducts = productsData.sort(() => Math.random() - 0.5);
         setProducts(shuffledProducts);
         setCategories(categoriesData);
+        setSettings(settingsData);
         setFilteredProducts(shuffledProducts);
       } catch (error) {
         console.error('Error loading data:', error);
@@ -142,6 +145,8 @@ const ProductsPage: React.FC = () => {
         <ProductModal
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
+          whatsappLink={settings?.whatsappLink}
+          messengerLink={settings?.messengerLink}
         />
       </div>
     </div>
