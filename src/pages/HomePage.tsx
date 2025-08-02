@@ -61,20 +61,24 @@ const HomePage: React.FC = () => {
       <div className="relative z-10 min-h-screen">
         <div className="container mx-auto px-4 py-8 mobile-padding">
           {/* Banner Section */}
-          {settings?.bannerImage && (
+          {settings?.bannerImage && settings.bannerImage.trim() !== '' && (
             <div className="mb-8 rounded-2xl overflow-hidden shadow-2xl fade-in">
               <div className="relative">
                 <img
                   src={settings.bannerImage}
                   alt="Banner"
                   className="w-full h-64 md:h-80 object-cover"
+                  onError={(e) => {
+                    console.error('Banner image failed to load:', settings.bannerImage);
+                    e.currentTarget.style.display = 'none';
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                 <div className="absolute bottom-6 left-6 right-6 text-white">
-                  {settings.bannerText && (
+                  {settings.bannerText && settings.bannerText.trim() !== '' && (
                     <h2 className="text-2xl md:text-3xl font-bold mb-2 text-shadow">{settings.bannerText}</h2>
                   )}
-                  {settings.bannerLink && (
+                  {settings.bannerLink && settings.bannerLink.trim() !== '' && (
                     <button
                       onClick={() => window.open(settings.bannerLink, '_blank')}
                       className="inline-flex items-center gap-2 gradient-primary text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all duration-300 mobile-button"

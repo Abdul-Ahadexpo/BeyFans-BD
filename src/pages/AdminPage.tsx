@@ -612,12 +612,26 @@ const AdminPage: React.FC = () => {
               <form className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Banner Image URL
+                  </label>
+                  <input
+                    type="url"
+                    value={settings.bannerImage || ''}
+                    onChange={(e) => setSettings({ ...settings, bannerImage: e.target.value })}
+                    placeholder="https://example.com/banner-image.jpg"
+                    className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Banner Text
                   </label>
                   <input
                     type="text"
                     value={settings.bannerText || ''}
                     onChange={(e) => setSettings({ ...settings, bannerText: e.target.value })}
+                    placeholder="Enter banner text"
                     className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
                   />
                 </div>
@@ -630,6 +644,20 @@ const AdminPage: React.FC = () => {
                     type="url"
                     value={settings.bannerLink || ''}
                     onChange={(e) => setSettings({ ...settings, bannerLink: e.target.value })}
+                    placeholder="https://example.com/link"
+                    className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Background Image URL
+                  </label>
+                  <input
+                    type="url"
+                    value={settings.backgroundImage || ''}
+                    onChange={(e) => setSettings({ ...settings, backgroundImage: e.target.value })}
+                    placeholder="https://example.com/background-image.jpg"
                     className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
                   />
                 </div>

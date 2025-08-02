@@ -4,12 +4,15 @@ import { Eye } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
-  onViewProduct: (product: Product) => void;
+  onViewProduct: () => void;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onViewProduct }) => {
   return (
-    <div className="glass-effect rounded-xl overflow-hidden card-hover fade-in flex flex-col h-full">
+    <div 
+      className="glass-effect rounded-xl overflow-hidden card-hover fade-in flex flex-col h-full cursor-pointer"
+      onClick={onViewProduct}
+    >
       <div className="relative overflow-hidden">
         <img
           src={product.images[0] || 'https://via.placeholder.com/300x200?text=No+Image'}
@@ -45,7 +48,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onViewProduct }) => 
           </span>
           
           <button
-            onClick={() => onViewProduct(product)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewProduct();
+            }}
             className="flex items-center gap-2 gradient-primary text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all duration-300 mobile-button"
           >
             <Eye className="w-4 h-4" />

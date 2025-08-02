@@ -6,12 +6,15 @@ import ProductModal from '../components/ProductModal';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { Search, Filter, Package } from 'lucide-react';
 
-const ProductsPage: React.FC = () => {
+interface ProductsPageProps {
+  onProductSelect: (productId: string) => void;
+}
+
+const ProductsPage: React.FC<ProductsPageProps> = ({ onProductSelect }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -127,7 +130,7 @@ const ProductsPage: React.FC = () => {
               <ProductCard
                 key={product.id}
                 product={product}
-                onViewProduct={setSelectedProduct}
+                onViewProduct={() => onProductSelect(product.id)}
               />
             ))}
           </div>
@@ -140,14 +143,6 @@ const ProductsPage: React.FC = () => {
             <p className="text-gray-400">Try adjusting your search or filter criteria.</p>
           </div>
         )}
-
-        {/* Product Modal */}
-        <ProductModal
-          product={selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-          whatsappLink={settings?.whatsappLink}
-          messengerLink={settings?.messengerLink}
-        />
       </div>
     </div>
   );
