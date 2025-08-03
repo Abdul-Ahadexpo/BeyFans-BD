@@ -153,15 +153,15 @@ const HomePage: React.FC = () => {
                 <Package className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-white mb-2">Premium Products</h3>
-              <p className="text-gray-300">Authentic Beyblade products with quality guarantee</p>
+              <p className="text-gray-300">Top Quality Beyblade Products at the Best Prices - Just for You!</p>
             </div>
 
             <div className="glass-effect rounded-2xl p-6 text-center card-hover">
               <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse-custom">
                 <MessageSquare className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Community Reviews</h3>
-              <p className="text-gray-300">Real reviews from real Beyblade enthusiasts</p>
+              <h3 className="text-xl font-bold text-white mb-2">Beyfane BD Community Reviews</h3>
+              <p className="text-gray-300">Authentic Reviews From Varified Customers</p>
             </div>
 
             <div className="glass-effect rounded-2xl p-6 text-center card-hover">
@@ -169,7 +169,7 @@ const HomePage: React.FC = () => {
                 <Zap className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-white mb-2">Fast Delivery</h3>
-              <p className="text-gray-300">Quick and secure delivery across Bangladesh</p>
+              <p className="text-gray-300">Quick & Secure Delivery All Over Bangladesh</p>
             </div>
           </div>
 
