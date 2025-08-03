@@ -2,9 +2,11 @@ export interface Product {
   id: string;
   name: string;
   price: number;
+  beforePrice?: number;
   description: string;
   category: string[];
   images: string[];
+  youtubeVideoUrl?: string;
   createdAt: Date;
 }
 
