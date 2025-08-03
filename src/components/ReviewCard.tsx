@@ -29,17 +29,17 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
       <p className="text-gray-300 leading-relaxed mb-4">{review.text}</p>
 
       {review.images.length > 0 && (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {review.images.map((image, index) => (
             <button
               key={index}
               onClick={() => setSelectedImage(image)}
-              className="w-full h-24 rounded-lg overflow-hidden hover:opacity-80 transition-opacity"
+              className="w-full rounded-lg overflow-hidden hover:opacity-80 transition-opacity"
             >
               <img
                 src={image}
                 alt={`Review ${index + 1}`}
-                className="w-full h-full object-cover"
+                className="w-full aspect-square object-contain bg-gray-800"
               />
             </button>
           ))}
