@@ -27,7 +27,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onViewProduct }) => 
           {product.category.map((cat, index) => (
             <span
               key={index}
-              className="px-2 py-1 gradient-primary text-white text-xs rounded-full"
+              className="px-2 py-1 gradient-primary text-white text-xs rounded-full whitespace-nowrap"
             >
               {cat}
             </span>
@@ -43,9 +43,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onViewProduct }) => 
         </p>
         
         <div className="flex items-center justify-between mt-auto">
-          <span className="text-2xl font-bold text-green-400">
-            ৳{product.price}
-          </span>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              {product.beforePrice && product.beforePrice > 0 && (
+                <span className="text-sm text-gray-400 line-through">৳{product.beforePrice}</span>
+              )}
+              <span className="text-xl md:text-2xl font-bold text-green-400">
+                ৳{product.price}
+              </span>
+            </div>
+            <span className="text-xs text-gray-500">Not fixed price</span>
+          </div>
           
           <button
             onClick={(e) => {
@@ -55,7 +63,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onViewProduct }) => 
             className="flex items-center gap-2 gradient-primary text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all duration-300 mobile-button"
           >
             <Eye className="w-4 h-4" />
-            Show Details
+            <span className="hidden sm:inline">Show Details</span>
+            <span className="sm:hidden">Details</span>
           </button>
         </div>
       </div>
