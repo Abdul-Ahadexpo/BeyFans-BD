@@ -28,8 +28,11 @@ import {
   MessageSquare, 
   Settings as SettingsIcon,
   Tag,
-  LogOut
+  LogOut,
+  HelpCircle,
+  Upload
 } from 'lucide-react';
+import { uploadToImgbb } from '../services/imgbbService';
 
 const AdminPage: React.FC = () => {
   const { logout } = useAuth();
@@ -42,15 +45,20 @@ const AdminPage: React.FC = () => {
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showAddReview, setShowAddReview] = useState(false);
+  const [showHowToUse, setShowHowToUse] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [uploadingBackground, setUploadingBackground] = useState(false);
   
   const [newProduct, setNewProduct] = useState({
     name: '',
     price: 0,
+    beforePrice: 0,
     description: '',
     category: [] as string[],
-    images: [] as string[]
+    images: [] as string[],
+    youtubeVideoUrl: ''
   });
 
   const [newCategory, setNewCategory] = useState({
@@ -97,11 +105,13 @@ const AdminPage: React.FC = () => {
       const addedProduct: Product = {
         id: productId,
         ...newProduct,
+        beforePrice: newProduct.beforePrice || undefined,
+        youtubeVideoUrl: newProduct.youtubeVideoUrl || undefined,
         createdAt: new Date()
       };
       
       setProducts([addedProduct, ...products]);
-      setNewProduct({ name: '', price: 0, description: '', category: [], images: [] });
+      setNewProduct({ name: '', price: 0, beforePrice: 0, description: '', category: [], images: [], youtubeVideoUrl: '' });
       setShowAddProduct(false);
     } catch (error) {
       console.error('Error adding product:', error);
@@ -203,6 +213,38 @@ const AdminPage: React.FC = () => {
     }
   };
 
+  const handleBannerImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingBanner(true);
+    try {
+      const imageUrl = await uploadToImgbb(file);
+      setSettings({ ...settings!, bannerImage: imageUrl });
+    } catch (error) {
+      console.error('Error uploading banner image:', error);
+      alert('Failed to upload banner image. Please try again.');
+    } finally {
+      setUploadingBanner(false);
+    }
+  };
+
+  const handleBackgroundImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingBackground(true);
+    try {
+      const imageUrl = await uploadToImgbb(file);
+      setSettings({ ...settings!, backgroundImage: imageUrl });
+    } catch (error) {
+      console.error('Error uploading background image:', error);
+      alert('Failed to upload background image. Please try again.');
+    } finally {
+      setUploadingBackground(false);
+    }
+  };
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -223,24 +265,31 @@ const AdminPage: React.FC = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto">
+        <div className="flex gap-1 mb-6 overflow-x-auto pb-2">
           {[
             { id: 'products', icon: Package, label: 'Products' },
             { id: 'reviews', icon: MessageSquare, label: 'Reviews' },
             { id: 'categories', icon: Tag, label: 'Categories' },
             { id: 'settings', icon: SettingsIcon, label: 'Settings' },
+            { id: 'help', icon: HelpCircle, label: 'How to Use' },
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
+              onClick={() => {
+                if (tab.id === 'help') {
+                  setShowHowToUse(true);
+                } else {
+                  setActiveTab(tab.id as any);
+                }
+              }}
+              className={`flex items-center gap-1 px-2 md:px-4 py-2 rounded-lg whitespace-nowrap transition-colors text-sm mobile-button ${
                 activeTab === tab.id
                   ? 'gradient-primary text-white shadow-lg'
                   : 'glass-effect text-gray-300 hover:bg-gray-700'
               }`}
             >
-              <tab.icon className="w-5 h-5" />
-              {tab.label}
+              <tab.icon className="w-4 h-4 md:w-5 md:h-5" />
+              <span className="hidden sm:inline">{tab.label}</span>
             </button>
           ))}
         </div>
@@ -279,7 +328,7 @@ const AdminPage: React.FC = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Price (৳)
+                        Current Price (৳)
                       </label>
                       <input
                         type="number"
@@ -287,6 +336,33 @@ const AdminPage: React.FC = () => {
                         onChange={(e) => setNewProduct({ ...newProduct, price: Number(e.target.value) })}
                         className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
                         required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Before Price (৳) - Optional
+                      </label>
+                      <input
+                        type="number"
+                        value={newProduct.beforePrice}
+                        onChange={(e) => setNewProduct({ ...newProduct, beforePrice: Number(e.target.value) })}
+                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
+                        placeholder="Original price (optional)"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        YouTube Review Video URL - Optional
+                      </label>
+                      <input
+                        type="url"
+                        value={newProduct.youtubeVideoUrl}
+                        onChange={(e) => setNewProduct({ ...newProduct, youtubeVideoUrl: e.target.value })}
+                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
+                        placeholder="https://www.youtube.com/watch?v=..."
                       />
                     </div>
                   </div>
@@ -364,33 +440,39 @@ const AdminPage: React.FC = () => {
             )}
 
             {/* Products List */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 fade-in">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 fade-in">
               {products.map(product => (
                 <div key={product.id} className="glass-effect rounded-xl overflow-hidden card-hover">
                   <img
                     src={product.images[0] || 'https://via.placeholder.com/300x200?text=No+Image'}
                     alt={product.name}
-                    className="w-full h-48 object-cover"
+                    className="w-full h-32 sm:h-48 object-cover"
                   />
-                  <div className="p-4">
-                    <h3 className="font-bold text-lg text-white mb-2">{product.name}</h3>
-                    <p className="text-green-400 font-bold text-xl mb-2">৳{product.price}</p>
-                    <p className="text-gray-300 text-sm mb-3 line-clamp-2">{product.description}</p>
+                  <div className="p-3 md:p-4">
+                    <h3 className="font-bold text-sm md:text-lg text-white mb-2 line-clamp-2">{product.name}</h3>
+                    <div className="mb-2">
+                      {product.beforePrice && product.beforePrice > 0 && (
+                        <span className="text-gray-400 line-through text-sm mr-2">৳{product.beforePrice}</span>
+                      )}
+                      <span className="text-green-400 font-bold text-lg md:text-xl">৳{product.price}</span>
+                      <p className="text-xs text-gray-500 mt-1">Not fixed price</p>
+                    </div>
+                    <p className="text-gray-300 text-xs md:text-sm mb-3 line-clamp-2">{product.description}</p>
                     
-                    <div className="flex gap-2">
+                    <div className="flex gap-1 md:gap-2">
                       <button
                         onClick={() => setEditingProduct(product)}
-                        className="flex-1 gradient-primary text-white py-2 rounded-lg hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2 mobile-button"
+                        className="flex-1 gradient-primary text-white py-2 rounded-lg hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-1 mobile-button text-xs md:text-sm"
                       >
                         <Edit className="w-4 h-4" />
-                        Edit
+                        <span className="hidden sm:inline">Edit</span>
                       </button>
                       <button
                         onClick={() => handleDeleteProduct(product.id)}
-                        className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-all duration-300 flex items-center justify-center gap-2 mobile-button"
+                        className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-all duration-300 flex items-center justify-center gap-1 mobile-button text-xs md:text-sm"
                       >
                         <Trash2 className="w-4 h-4" />
-                        Delete
+                        <span className="hidden sm:inline">Delete</span>
                       </button>
                     </div>
                   </div>
@@ -476,12 +558,12 @@ const AdminPage: React.FC = () => {
               </div>
             )}
             
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               {reviews.map(review => (
-                <div key={review.id} className="glass-effect rounded-xl p-6 card-hover">
+                <div key={review.id} className="glass-effect rounded-xl p-4 md:p-6 card-hover">
                   <div className="flex items-start justify-between mb-4">
                     <div>
-                      <h3 className="font-bold text-lg text-white">{review.userName}</h3>
+                      <h3 className="font-bold text-sm md:text-lg text-white">{review.userName}</h3>
                       <p className="text-sm text-gray-400">{review.createdAt.toLocaleDateString()}</p>
                     </div>
                     <button
@@ -492,16 +574,16 @@ const AdminPage: React.FC = () => {
                     </button>
                   </div>
                   
-                  <p className="text-gray-300 mb-4">{review.text}</p>
+                  <p className="text-gray-300 mb-4 text-sm md:text-base">{review.text}</p>
                   
                   {review.images.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       {review.images.map((image, index) => (
                         <img
                           key={index}
                           src={image}
                           alt={`Review ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-lg"
+                          className="w-full aspect-square object-contain bg-gray-800 rounded-lg"
                         />
                       ))}
                     </div>
@@ -516,30 +598,30 @@ const AdminPage: React.FC = () => {
         {activeTab === 'categories' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">Categories Management</h2>
+              <h2 className="text-xl md:text-2xl font-bold text-white">Categories Management</h2>
               <button
                 onClick={() => setShowAddCategory(true)}
-                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex items-center gap-2 gradient-primary text-white px-3 md:px-4 py-2 rounded-lg hover:shadow-lg transition-all duration-300 mobile-button text-sm"
               >
                 <Plus className="w-5 h-5" />
-                Add Category
+                <span className="hidden sm:inline">Add Category</span>
               </button>
             </div>
 
             {/* Add Category Form */}
             {showAddCategory && (
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <h3 className="text-xl font-bold text-black mb-4">Add New Category</h3>
+              <div className="glass-effect rounded-xl p-4 md:p-6 slide-up">
+                <h3 className="text-lg md:text-xl font-bold text-white mb-4">Add New Category</h3>
                 <form onSubmit={handleAddCategory} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Category Name
                     </label>
                     <input
                       type="text"
                       value={newCategory.name}
                       onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-                      className="w-full p-3 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
                       required
                     />
                   </div>
@@ -547,14 +629,14 @@ const AdminPage: React.FC = () => {
                   <div className="flex gap-3">
                     <button
                       type="submit"
-                      className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                      className="flex-1 gradient-primary text-white py-3 rounded-lg hover:shadow-lg transition-all duration-300 mobile-button"
                     >
                       Add Category
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowAddCategory(false)}
-                      className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="px-6 py-3 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700 transition-all duration-300 mobile-button"
                     >
                       Cancel
                     </button>
@@ -564,15 +646,15 @@ const AdminPage: React.FC = () => {
             )}
 
             {/* Categories List */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {categories.map(category => (
-                <div key={category.id} className="bg-white rounded-xl shadow-lg p-6">
+                <div key={category.id} className="glass-effect rounded-xl p-4 md:p-6 card-hover">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-lg text-gray-900">{category.name}</h3>
-                    <div className="flex gap-2">
+                    <h3 className="font-bold text-sm md:text-lg text-white">{category.name}</h3>
+                    <div className="flex gap-1 md:gap-2">
                       <button
                         onClick={() => setEditingCategory(category)}
-                        className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors"
+                        className="gradient-primary text-white p-2 rounded-lg hover:shadow-lg transition-all duration-300 mobile-button"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
@@ -588,13 +670,13 @@ const AdminPage: React.FC = () => {
                             }
                           }
                         }}
-                        className="bg-red-600 text-white p-2 rounded-lg hover:bg-red-700 transition-colors"
+                        className="bg-red-600 text-white p-2 rounded-lg hover:bg-red-700 transition-all duration-300 mobile-button"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
-                  <p className="text-gray-600">
+                  <p className="text-gray-400 text-sm">
                     {category.productIds.length} products
                   </p>
                 </div>
@@ -606,21 +688,43 @@ const AdminPage: React.FC = () => {
         {/* Settings Tab */}
         {activeTab === 'settings' && settings && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-white">Settings Management</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-white">Settings Management</h2>
             
-            <div className="glass-effect rounded-xl p-6">
+            <div className="glass-effect rounded-xl p-4 md:p-6">
               <form className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Banner Image URL
                   </label>
-                  <input
-                    type="url"
-                    value={settings.bannerImage || ''}
-                    onChange={(e) => setSettings({ ...settings, bannerImage: e.target.value })}
-                    placeholder="https://example.com/banner-image.jpg"
-                    className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
-                  />
+                  <div className="space-y-2">
+                    <input
+                      type="url"
+                      value={settings.bannerImage || ''}
+                      onChange={(e) => setSettings({ ...settings, bannerImage: e.target.value })}
+                      placeholder="https://example.com/banner-image.jpg"
+                      className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
+                    />
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400 text-sm">Or upload directly:</span>
+                      <label className="cursor-pointer">
+                        <div className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors mobile-button">
+                          {uploadingBanner ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                          ) : (
+                            <Upload className="w-4 h-4" />
+                          )}
+                          <span className="text-sm">Upload</span>
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleBannerImageUpload}
+                          className="hidden"
+                          disabled={uploadingBanner}
+                        />
+                      </label>
+                    </div>
+                  </div>
                 </div>
 
                 <div>
@@ -653,13 +757,35 @@ const AdminPage: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Background Image URL
                   </label>
-                  <input
-                    type="url"
-                    value={settings.backgroundImage || ''}
-                    onChange={(e) => setSettings({ ...settings, backgroundImage: e.target.value })}
-                    placeholder="https://example.com/background-image.jpg"
-                    className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
-                  />
+                  <div className="space-y-2">
+                    <input
+                      type="url"
+                      value={settings.backgroundImage || ''}
+                      onChange={(e) => setSettings({ ...settings, backgroundImage: e.target.value })}
+                      placeholder="https://example.com/background-image.jpg"
+                      className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
+                    />
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400 text-sm">Or upload directly:</span>
+                      <label className="cursor-pointer">
+                        <div className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors mobile-button">
+                          {uploadingBackground ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                          ) : (
+                            <Upload className="w-4 h-4" />
+                          )}
+                          <span className="text-sm">Upload</span>
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleBackgroundImageUpload}
+                          className="hidden"
+                          disabled={uploadingBackground}
+                        />
+                      </label>
+                    </div>
+                  </div>
                 </div>
 
                 <div>
@@ -742,7 +868,7 @@ const AdminPage: React.FC = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Price (৳)
+                        Current Price (৳)
                       </label>
                       <input
                         type="number"
@@ -750,6 +876,33 @@ const AdminPage: React.FC = () => {
                         onChange={(e) => setEditingProduct({ ...editingProduct, price: Number(e.target.value) })}
                         className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
                         required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Before Price (৳) - Optional
+                      </label>
+                      <input
+                        type="number"
+                        value={editingProduct.beforePrice || 0}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, beforePrice: Number(e.target.value) || undefined })}
+                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
+                        placeholder="Original price (optional)"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        YouTube Review Video URL - Optional
+                      </label>
+                      <input
+                        type="url"
+                        value={editingProduct.youtubeVideoUrl || ''}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, youtubeVideoUrl: e.target.value || undefined })}
+                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
+                        placeholder="https://www.youtube.com/watch?v=..."
                       />
                     </div>
                   </div>
@@ -823,6 +976,96 @@ const AdminPage: React.FC = () => {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* How to Use Modal */}
+        {showHowToUse && (
+          <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50">
+            <div className="glass-effect rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 glass-effect p-4 border-b border-gray-600 flex items-center justify-between">
+                <h2 className="text-xl font-bold text-white">How to Use Admin Panel</h2>
+                <button
+                  onClick={() => setShowHowToUse(false)}
+                  className="p-2 hover:bg-gray-700 rounded-full transition-colors"
+                >
+                  <X className="w-6 h-6 text-white" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-6 text-white">
+                <div>
+                  <h3 className="text-lg font-bold text-green-400 mb-3">📦 Products Management</h3>
+                  <ul className="space-y-2 text-sm text-gray-300">
+                    <li>• Click "Add Product" to create new products</li>
+                    <li>• Fill in product name, current price, and description</li>
+                    <li>• Add "Before Price" to show crossed-out original price</li>
+                    <li>• Select categories by checking boxes</li>
+                    <li>• Upload up to 4 product images using the image uploader</li>
+                    <li>• Add YouTube review video URL (optional)</li>
+                    <li>• Use "Edit" button to modify existing products</li>
+                    <li>• Use "Delete" button to remove products</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-bold text-green-400 mb-3">⭐ Reviews Management</h3>
+                  <ul className="space-y-2 text-sm text-gray-300">
+                    <li>• Click "Add Review" to create customer reviews</li>
+                    <li>• Enter reviewer name and review text</li>
+                    <li>• Upload up to 4 review images</li>
+                    <li>• Reviews will appear on the Reviews page</li>
+                    <li>• Use "Delete" button to remove inappropriate reviews</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-bold text-green-400 mb-3">🏷️ Categories Management</h3>
+                  <ul className="space-y-2 text-sm text-gray-300">
+                    <li>• Click "Add Category" to create product categories</li>
+                    <li>• Enter category name (e.g., "Burst Beys", "Metal Fight")</li>
+                    <li>• Categories will appear as filter options on Products page</li>
+                    <li>• Assign products to categories when adding/editing products</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-bold text-green-400 mb-3">⚙️ Settings Management</h3>
+                  <ul className="space-y-2 text-sm text-gray-300">
+                    <li>• <strong>Banner Image:</strong> Upload or paste URL for homepage banner</li>
+                    <li>• <strong>Banner Text:</strong> Text displayed on banner</li>
+                    <li>• <strong>Banner Link:</strong> URL when banner is clicked</li>
+                    <li>• <strong>Background Image:</strong> Homepage background image</li>
+                    <li>• <strong>WhatsApp Link:</strong> Your WhatsApp business link</li>
+                    <li>• <strong>Messenger Link:</strong> Your Facebook Messenger link</li>
+                    <li>• <strong>Admin Password:</strong> Change admin login password</li>
+                    <li>• Click "Save Settings" to apply changes</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-bold text-green-400 mb-3">📱 Mobile Tips</h3>
+                  <ul className="space-y-2 text-sm text-gray-300">
+                    <li>• All features work on mobile devices</li>
+                    <li>• Swipe horizontally to see all tabs</li>
+                    <li>• Tap and hold images to view full size</li>
+                    <li>• Use "Upload" buttons for direct image uploads</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-bold text-green-400 mb-3">💡 Pro Tips</h3>
+                  <ul className="space-y-2 text-sm text-gray-300">
+                    <li>• Use high-quality images for better customer experience</li>
+                    <li>• Write detailed product descriptions</li>
+                    <li>• Set "Before Price" higher than "Current Price" for discount effect</li>
+                    <li>• Add YouTube review videos to build trust</li>
+                    <li>• Regularly add customer reviews to increase credibility</li>
+                    <li>• Update WhatsApp/Messenger links for easy customer contact</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
