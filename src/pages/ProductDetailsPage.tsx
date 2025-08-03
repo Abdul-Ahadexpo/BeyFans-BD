@@ -217,6 +217,19 @@ const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({ productId, onBa
 
             {/* Order Buttons */}
             <div className="space-y-3">
+ {settings?.messengerLink && (
+                <button
+                  onClick={handleMessengerOrder}
+                  className="w-full bg-blue-600 text-white px-6 py-4 rounded-xl hover:bg-blue-700 transition-all duration-300 flex items-center justify-center gap-3 text-lg font-semibold mobile-button card-hover"
+                >
+                  <MessageCircle className="w-6 h-6" />
+                  Order via Messenger
+                </button>
+              )}
+
+              
+
+              
               {settings?.whatsappLink && (
                 <button
                   onClick={handleWhatsAppOrder}
@@ -227,15 +240,7 @@ const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({ productId, onBa
                 </button>
               )}
               
-              {settings?.messengerLink && (
-                <button
-                  onClick={handleMessengerOrder}
-                  className="w-full bg-blue-600 text-white px-6 py-4 rounded-xl hover:bg-blue-700 transition-all duration-300 flex items-center justify-center gap-3 text-lg font-semibold mobile-button card-hover"
-                >
-                  <MessageCircle className="w-6 h-6" />
-                  Order via Messenger
-                </button>
-              )}
+             
             </div>
 
             {/* Additional Info */}
