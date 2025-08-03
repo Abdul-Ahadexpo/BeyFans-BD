@@ -29,6 +29,8 @@ export const getProducts = async (): Promise<Product[]> => {
           ...productsData[key],
           category: productsData[key].category || [],
           images: productsData[key].images || [],
+          beforePrice: productsData[key].beforePrice || undefined,
+          youtubeVideoUrl: productsData[key].youtubeVideoUrl || undefined,
           createdAt: new Date(productsData[key].createdAt)
         }))
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -52,6 +54,8 @@ export const getProduct = async (id: string): Promise<Product | null> => {
         ...productData,
         category: productData.category || [],
         images: productData.images || [],
+        beforePrice: productData.beforePrice || undefined,
+        youtubeVideoUrl: productData.youtubeVideoUrl || undefined,
         createdAt: new Date(productData.createdAt)
       };
     }
