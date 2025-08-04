@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Navigation from './components/Navigation';
 import HomePage from './pages/HomePage';
@@ -88,15 +88,15 @@ const AppContent: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <HomePage onTabChange={handleTabChange} />; // ✅ pass handleTabChange
+        return <HomePage />;
       case 'products':
         return <ProductsPage onProductSelect={handleProductSelect} />;
       case 'reviews':
         return <ReviewsPage />;
       case 'admin':
-        return isAdmin ? <AdminPage /> : <HomePage onTabChange={handleTabChange} />;
+        return isAdmin ? <AdminPage /> : <HomePage />;
       default:
-        return <HomePage onTabChange={handleTabChange} />;
+        return <HomePage />;
     }
   };
 
