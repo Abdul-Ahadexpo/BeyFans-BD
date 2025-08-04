@@ -1,8 +1,6 @@
-// src/pages/HomePage.tsx
 import React, { useState, useEffect } from "react";
 import { Settings } from "../types";
 import { getSettings } from "../services/firebaseService";
-import { useNavigate } from "react-router-dom";
 import {
   ExternalLink,
   MessageCircle,
@@ -14,7 +12,6 @@ import {
 
 const HomePage: React.FC = () => {
   const [settings, setSettings] = useState<Settings | null>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -23,6 +20,7 @@ const HomePage: React.FC = () => {
         if (settingsData) {
           setSettings(settingsData);
         } else {
+          // Fallback to default settings if getSettings returns null
           setSettings({
             adminPassword: "admin1234",
             bannerImage: "",
@@ -36,6 +34,7 @@ const HomePage: React.FC = () => {
         }
       } catch (error) {
         console.error("Error loading settings:", error);
+        // Set default settings if loading fails
         setSettings({
           adminPassword: "admin1234",
           bannerImage: "",
@@ -128,8 +127,7 @@ const HomePage: React.FC = () => {
               Welcome to BeyFans BD
             </h1>
             <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed text-shadow mobile-text">
-              Buy & Get Your Favourite Beyblade Products From BeyFans BD at Best
-              Price and Create Your Best Beyblade Collection!
+              Buy & Get Your Favourite Beyblade Products From BeyFans BD at Best Price and Create Your Best Beyblade Collection!
             </p>
           </div>
 
@@ -192,11 +190,7 @@ const HomePage: React.FC = () => {
               </p>
             </div>
 
-            {/* ✅ Clickable Reviews Card */}
-            <div
-              onClick={() => navigate("/reviews")}
-              className="glass-effect rounded-2xl p-6 text-center card-hover cursor-pointer"
-            >
+            <div className="glass-effect rounded-2xl p-6 text-center card-hover">
               <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse-custom">
                 <MessageSquare className="w-8 h-8 text-white" />
               </div>
