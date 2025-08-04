@@ -127,9 +127,7 @@ const HomePage: React.FC = () => {
               Welcome to BeyFans BD
             </h1>
             <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed text-shadow mobile-text">
-              Your ultimate destination for premium Beyblade collections,
-              accessories, and community reviews. Discover the latest releases
-              and join the battle!
+              Buy & Get Your Favourite Beyblade Products From BeyFans BD at Best Price and Create Your Best Beyblade Collection |🇧🇩
             </p>
           </div>
 
