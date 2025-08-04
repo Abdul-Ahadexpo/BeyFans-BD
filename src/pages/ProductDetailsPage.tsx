@@ -40,7 +40,7 @@ const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({ productId, onBa
   const handleWhatsAppOrder = () => {
     if (!product || !settings?.whatsappLink) return;
     
-    const message = `Hi! I'm interested in ordering:\n\n*${product.name}*\nPrice: $${product.currentPrice || product.price}\n\nPlease let me know about availability and delivery details.`;
+    const message = `Hi! I'm interested in ordering:\n\n*${product.name}*\nPrice: TK${product.currentPrice || product.price}\n\nPlease let me know about availability and delivery details.`;
     const encodedMessage = encodeURIComponent(message);
     window.open(`${settings.whatsappLink}?text=${encodedMessage}`, '_blank');
   };
