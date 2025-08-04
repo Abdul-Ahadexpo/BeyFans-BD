@@ -23,6 +23,7 @@ export interface Settings {
   bannerText: string;
   bannerLink: string;
   backgroundImage: string;
+  mobileBackgroundImage: string;
   whatsappLink: string;
   messengerLink: string;
   socialLinks: string[];

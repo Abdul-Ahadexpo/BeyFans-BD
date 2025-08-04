@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Product, Settings } from '../types';
 import { getProduct, getSettings } from '../services/firebaseService';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { ArrowLeft, ChevronLeft, ChevronRight, MessageCircle, Package } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, MessageCircle, Star, Calendar, Hash, Image as ImageIcon, Play } from 'lucide-react';
 
 interface ProductDetailsPageProps {
   productId: string;
@@ -12,17 +12,19 @@ interface ProductDetailsPageProps {
 const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({ productId, onBack }) => {
   const [product, setProduct] = useState<Product | null>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadProductAndSettings = async () => {
+      if (!productId) return;
+      
+      setLoading(true);
       try {
         const [productData, settingsData] = await Promise.all([
           getProduct(productId),
           getSettings()
         ]);
-        
         setProduct(productData);
         setSettings(settingsData);
       } catch (error) {
@@ -32,55 +34,52 @@ const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({ productId, onBa
       }
     };
 
-    loadData();
+    loadProductAndSettings();
   }, [productId]);
 
+  const handleWhatsAppOrder = () => {
+    if (!product || !settings?.whatsappLink) return;
+    
+    const message = `Hi! I'm interested in ordering:\n\n*${product.name}*\nPrice: $${product.currentPrice || product.price}\n\nPlease let me know about availability and delivery details.`;
+    const encodedMessage = encodeURIComponent(message);
+    window.open(`${settings.whatsappLink}?text=${encodedMessage}`, '_blank');
+  };
+
+  const handleMessengerOrder = () => {
+    if (!settings?.messengerLink) return;
+    window.open(settings.messengerLink, '_blank');
+  };
+
   const nextImage = () => {
-    if (product && product.images.length > 0) {
-      setCurrentImageIndex((prev) => 
-        prev === product.images.length - 1 ? 0 : prev + 1
-      );
+    if (product && product.images.length > 1) {
+      setCurrentImageIndex((prev) => (prev + 1) % product.images.length);
     }
   };
 
   const prevImage = () => {
-    if (product && product.images.length > 0) {
-      setCurrentImageIndex((prev) => 
-        prev === 0 ? product.images.length - 1 : prev - 1
-      );
-    }
-  };
-
-  const handleWhatsAppOrder = () => {
-    if (settings?.whatsappLink && product) {
-      const message = `Hi! I'm interested in ordering: ${product.name} - ৳${product.price}`;
-      window.open(`${settings.whatsappLink}?text=${encodeURIComponent(message)}`, '_blank');
-    }
-  };
-
-  const handleMessengerOrder = () => {
-    if (settings?.messengerLink) {
-      window.open(settings.messengerLink, '_blank');
+    if (product && product.images.length > 1) {
+      setCurrentImageIndex((prev) => (prev - 1 + product.images.length) % product.images.length);
     }
   };
 
   if (loading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="min-h-screen gradient-dark flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   if (!product) {
     return (
-      <div className="min-h-screen gradient-dark pb-20 flex items-center justify-center">
+      <div className="min-h-screen gradient-dark flex items-center justify-center text-white">
         <div className="text-center">
-          <Package className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">Product Not Found</h2>
-          <p className="text-gray-400 mb-6">The product you're looking for doesn't exist.</p>
-          <button
+          <p className="text-xl mb-4">Product not found</p>
+          <button 
             onClick={onBack}
-            className="gradient-primary text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all duration-300 flex items-center gap-2 mx-auto mobile-button"
+            className="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
           >
-            <ArrowLeft className="w-5 h-5" />
-            Go Back
+            Back to Products
           </button>
         </div>
       </div>
@@ -88,167 +87,231 @@ const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({ productId, onBa
   }
 
   return (
-    <div className="min-h-screen gradient-dark pb-20">
-      <div className="container mx-auto px-4 py-6 mobile-padding">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6 fade-in">
-          <button
-            onClick={onBack}
-            className="p-3 glass-effect rounded-full hover:bg-gray-700 transition-all duration-300 mobile-button"
-          >
-            <ArrowLeft className="w-6 h-6 text-white" />
-          </button>
-          <h1 className="text-2xl font-bold text-white text-shadow truncate">{product.name}</h1>
-        </div>
+    <div className="min-h-screen gradient-dark text-white">
+      <div className="container mx-auto px-4 py-6 max-w-6xl">
+        {/* Back Button */}
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 mb-6 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Back to Products
+        </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 fade-in">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Image Gallery */}
           <div className="space-y-4">
-            <div className="relative glass-effect rounded-2xl overflow-hidden">
-              <img
-                src={product.images[currentImageIndex] || 'https://via.placeholder.com/600x400?text=No+Image'}
-                alt={product.name}
-                className="w-full h-96 object-cover"
-              />
-              
-              {product.images.length > 1 && (
+            {/* Main Image */}
+            <div className="relative bg-white/10 backdrop-blur-sm rounded-xl overflow-hidden aspect-square">
+              {product.images.length > 0 ? (
                 <>
-                  <button
-                    onClick={prevImage}
-                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-3 rounded-full hover:bg-opacity-70 transition-all mobile-button"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={nextImage}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-3 rounded-full hover:bg-opacity-70 transition-all mobile-button"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                  
-                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-                    {product.images.map((_, index) => (
+                  <img
+                    src={product.images[currentImageIndex]}
+                    alt={product.name}
+                    className="w-full h-full object-contain"
+                  />
+                  {product.images.length > 1 && (
+                    <>
                       <button
-                        key={index}
-                        onClick={() => setCurrentImageIndex(index)}
-                        className={`w-3 h-3 rounded-full transition-all mobile-button ${
-                          index === currentImageIndex ? 'bg-white' : 'bg-white bg-opacity-50'
-                        }`}
-                      />
-                    ))}
-                  </div>
+                        onClick={prevImage}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors"
+                      >
+                        <ArrowLeft className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={nextImage}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors"
+                      >
+                        <ArrowLeft className="w-5 h-5 rotate-180" />
+                      </button>
+                    </>
+                  )}
                 </>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                  <ImageIcon className="w-16 h-16" />
+                </div>
               )}
             </div>
 
             {/* Thumbnail Gallery */}
             {product.images.length > 1 && (
-              <div className="grid grid-cols-4 gap-2">
+              <div className="flex gap-2 overflow-x-auto pb-2">
                 {product.images.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentImageIndex(index)}
-                    className={`relative rounded-lg overflow-hidden transition-all mobile-button ${
-                      index === currentImageIndex 
-                        ? 'ring-2 ring-green-500 opacity-100' 
-                        : 'opacity-70 hover:opacity-100'
+                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
+                      currentImageIndex === index ? 'border-green-500' : 'border-white/20'
                     }`}
                   >
                     <img
                       src={image}
                       alt={`${product.name} ${index + 1}`}
-                      className="w-full h-20 object-cover"
+                      className="w-full h-full object-cover"
                     />
                   </button>
                 ))}
               </div>
             )}
+
+            {/* Image Indicators */}
+            {product.images.length > 1 && (
+              <div className="flex justify-center gap-2">
+                {product.images.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      currentImageIndex === index ? 'bg-green-500' : 'bg-white/30'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Product Info */}
+          {/* Product Information */}
           <div className="space-y-6">
-            <div className="glass-effect rounded-2xl p-6 card-hover">
-              <div className="space-y-4">
-                {/* Categories */}
+            {/* Product Title */}
+            <div>
+              <h1 className="text-3xl lg:text-4xl font-bold mb-2">{product.name}</h1>
+              {product.category && product.category.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {product.category.map((cat, index) => (
                     <span
                       key={index}
-                      className="px-3 py-1 gradient-primary text-white text-sm rounded-full"
+                      className="px-3 py-1 bg-green-600/20 text-green-300 rounded-full text-sm"
                     >
                       {cat}
                     </span>
                   ))}
                 </div>
+              )}
+            </div>
 
-                {/* Price */}
-                <div className="text-4xl font-bold text-green-400">
-                  ৳{product.price.toLocaleString()}
+            {/* Price */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+              <div className="flex items-center gap-3 mb-2">
+                {product.beforePrice && (
+                  <span className="text-2xl text-gray-400 line-through">
+                    ${product.beforePrice}
+                  </span>
+                )}
+                <span className="text-3xl lg:text-4xl font-bold text-green-400">
+                  ${product.currentPrice || product.price}
+                </span>
+              </div>
+              <p className="text-sm text-gray-300">Not fixed price</p>
+            </div>
+
+            {/* Description */}
+            {product.description && (
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+                <h3 className="text-xl font-semibold mb-3">Description</h3>
+                <p className="text-gray-300 leading-relaxed">{product.description}</p>
+              </div>
+            )}
+
+            {/* YouTube Video */}
+            {product.youtubeVideoUrl && (
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+                <h3 className="text-xl font-semibold mb-3 flex items-center gap-2">
+                  <Play className="w-5 h-5 text-red-500" />
+                  Review Video
+                </h3>
+                <div className="aspect-video rounded-lg overflow-hidden">
+                  <iframe
+                    src={product.youtubeVideoUrl.includes('embed') 
+                      ? product.youtubeVideoUrl 
+                      : product.youtubeVideoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')
+                    }
+                    title="Product Review Video"
+                    className="w-full h-full"
+                    allowFullScreen
+                  />
                 </div>
+              </div>
+            )}
 
-                {/* Description */}
-                <div>
-                  <h3 className="font-semibold text-white mb-3 text-lg">Description</h3>
-                  <p className="text-gray-300 leading-relaxed text-base">
-                    {product.description || 'No description available.'}
-                  </p>
+            {/* Product Details */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+              <h3 className="text-xl font-semibold mb-4">Product Details</h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Hash className="w-5 h-5 text-gray-400" />
+                  <span className="text-gray-300">ID: {product.id}</span>
                 </div>
-
-                {/* Product Details */}
-                <div className="border-t border-gray-600 pt-4">
-                  <h3 className="font-semibold text-white mb-3 text-lg">Product Details</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Product ID:</span>
-                      <span className="text-gray-300 font-mono">{product.id}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Added:</span>
-                      <span className="text-gray-300">{product.createdAt.toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Images:</span>
-                      <span className="text-gray-300">{product.images.length} photo{product.images.length !== 1 ? 's' : ''}</span>
-                    </div>
-                  </div>
+                <div className="flex items-center gap-3">
+                  <Calendar className="w-5 h-5 text-gray-400" />
+                  <span className="text-gray-300">
+                    Added: {new Date(product.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <ImageIcon className="w-5 h-5 text-gray-400" />
+                  <span className="text-gray-300">
+                    Images: {product.images.length}
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Order Buttons */}
-            <div className="space-y-3">
- {settings?.messengerLink && (
-                <button
-                  onClick={handleMessengerOrder}
-                  className="w-full bg-blue-600 text-white px-6 py-4 rounded-xl hover:bg-blue-700 transition-all duration-300 flex items-center justify-center gap-3 text-lg font-semibold mobile-button card-hover"
-                >
-                  <MessageCircle className="w-6 h-6" />
-                  Order via Messenger
-                </button>
-              )}
-
-              
-
-              
-              {settings?.whatsappLink && (
-                <button
-                  onClick={handleWhatsAppOrder}
-                  className="w-full bg-green-600 text-white px-6 py-4 rounded-xl hover:bg-green-700 transition-all duration-300 flex items-center justify-center gap-3 text-lg font-semibold mobile-button card-hover"
-                >
-                  <MessageCircle className="w-6 h-6" />
-                  Order via WhatsApp
-                </button>
-              )}
-              
-             
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold">Order Now</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {settings?.whatsappLink && (
+                  <button
+                    onClick={handleWhatsAppOrder}
+                    className="flex items-center justify-center gap-3 px-6 py-4 bg-green-600 hover:bg-green-700 rounded-xl transition-colors font-semibold text-lg"
+                  >
+                    <MessageCircle className="w-6 h-6" />
+                    WhatsApp Order
+                  </button>
+                )}
+                {settings?.messengerLink && (
+                  <button
+                    onClick={handleMessengerOrder}
+                    className="flex items-center justify-center gap-3 px-6 py-4 bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors font-semibold text-lg"
+                  >
+                    <ShoppingCart className="w-6 h-6" />
+                    Messenger Order
+                  </button>
+                )}
+              </div>
             </div>
 
-            {/* Additional Info */}
-            <div className="glass-effect rounded-2xl p-6 card-hover">
-              <h3 className="font-semibold text-white mb-3 text-lg">Need Help?</h3>
-              <p className="text-gray-300 text-sm leading-relaxed">
-                Have questions about this product? Contact us through WhatsApp or Messenger for instant support and detailed information.
+            {/* Help Section */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+              <h3 className="text-xl font-semibold mb-3">Need Help?</h3>
+              <p className="text-gray-300 mb-4">
+                Have questions about this product? Contact us for more information!
               </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                {settings?.whatsappLink && (
+                  <a
+                    href={settings.whatsappLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600/20 text-green-300 rounded-lg hover:bg-green-600/30 transition-colors"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    WhatsApp Support
+                  </a>
+                )}
+                {settings?.messengerLink && (
+                  <a
+                    href={settings.messengerLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600/20 text-blue-300 rounded-lg hover:bg-blue-600/30 transition-colors"
+                  >
+                    <ShoppingCart className="w-4 h-4" />
+                    Messenger Support
+                  </a>
+                )}
+              </div>
             </div>
           </div>
         </div>

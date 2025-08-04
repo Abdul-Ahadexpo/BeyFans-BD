@@ -172,6 +172,7 @@ export const getSettings = async (): Promise<Settings | null> => {
         bannerText: '',
         bannerLink: '',
         backgroundImage: '',
+        mobileBackgroundImage: '',
         whatsappLink: '',
         messengerLink: '',
         socialLinks: []
@@ -192,6 +193,7 @@ export const getSettings = async (): Promise<Settings | null> => {
       bannerText: '',
       bannerLink: '',
       backgroundImage: '',
+      mobileBackgroundImage: '',
       whatsappLink: '',
       messengerLink: '',
       socialLinks: []

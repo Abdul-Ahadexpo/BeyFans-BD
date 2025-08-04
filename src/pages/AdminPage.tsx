@@ -50,6 +50,7 @@ const AdminPage: React.FC = () => {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [uploadingBackground, setUploadingBackground] = useState(false);
+  const [uploadingMobileBackground, setUploadingMobileBackground] = useState(false);
   
   const [newProduct, setNewProduct] = useState({
     name: '',
@@ -242,6 +243,22 @@ const AdminPage: React.FC = () => {
       alert('Failed to upload background image. Please try again.');
     } finally {
       setUploadingBackground(false);
+    }
+  };
+
+  const handleMobileBackgroundImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingMobileBackground(true);
+    try {
+      const imageUrl = await uploadToImgbb(file);
+      setSettings({ ...settings!, mobileBackgroundImage: imageUrl });
+    } catch (error) {
+      console.error('Error uploading mobile background image:', error);
+      alert('Failed to upload mobile background image. Please try again.');
+    } finally {
+      setUploadingMobileBackground(false);
     }
   };
 
@@ -755,14 +772,14 @@ const AdminPage: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Background Image URL
+                    Background Image URL (Desktop)
                   </label>
                   <div className="space-y-2">
                     <input
                       type="url"
                       value={settings.backgroundImage || ''}
                       onChange={(e) => setSettings({ ...settings, backgroundImage: e.target.value })}
-                      placeholder="https://example.com/background-image.jpg"
+                      placeholder="https://example.com/desktop-background.jpg"
                       className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
                     />
                     <div className="flex items-center gap-2">
@@ -782,6 +799,41 @@ const AdminPage: React.FC = () => {
                           onChange={handleBackgroundImageUpload}
                           className="hidden"
                           disabled={uploadingBackground}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Background Image URL (Mobile - Vertical)
+                  </label>
+                  <div className="space-y-2">
+                    <input
+                      type="url"
+                      value={settings.mobileBackgroundImage || ''}
+                      onChange={(e) => setSettings({ ...settings, mobileBackgroundImage: e.target.value })}
+                      placeholder="https://example.com/mobile-background.jpg"
+                      className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
+                    />
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400 text-sm">Or upload directly:</span>
+                      <label className="cursor-pointer">
+                        <div className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors mobile-button">
+                          {uploadingMobileBackground ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                          ) : (
+                            <Upload className="w-4 h-4" />
+                          )}
+                          <span className="text-sm">Upload</span>
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleMobileBackgroundImageUpload}
+                          className="hidden"
+                          disabled={uploadingMobileBackground}
                         />
                       </label>
                     </div>
