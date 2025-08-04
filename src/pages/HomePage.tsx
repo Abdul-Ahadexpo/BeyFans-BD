@@ -248,11 +248,11 @@ const HomePage: React.FC = () => {
   );
 
 
-   return (
+  return (
     <Router>
       <Routes>
         {/* Home Page */}
-        <Route path="/" element={<YourComponent />} />
+        <Route path="/" element={<HomePage />} />
 
         {/* Reviews Page */}
         <Route path="/reviews" element={<ReviewsPage />} />
