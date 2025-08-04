@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Settings } from "../types";
 import { getSettings } from "../services/firebaseService";
+import ReviewsPage from "./pages/ReviewsPage";
 import {
   ExternalLink,
   MessageCircle,
@@ -190,17 +191,26 @@ const HomePage: React.FC = () => {
               </p>
             </div>
 
-            <div className="glass-effect rounded-2xl p-6 text-center card-hover">
-              <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse-custom">
-                <MessageSquare className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">
-                Beyfane BD Community Reviews
-              </h3>
-              <p className="text-gray-300">
-                Authentic Reviews From Varified Customers
-              </p>
-            </div>
+
+
+            
+          <div
+      onClick={() => navigate("/reviews")}
+      className="glass-effect rounded-2xl p-6 text-center card-hover cursor-pointer"
+    >
+      <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse-custom">
+        <MessageSquare className="w-8 h-8 text-white" />
+      </div>
+      <h3 className="text-xl font-bold text-white mb-2">
+        Beyfane BD Community Reviews
+      </h3>
+      <p className="text-gray-300">
+        Authentic Reviews From Varified Customers
+      </p>
+    </div>
+
+
+            
 
             <div className="glass-effect rounded-2xl p-6 text-center card-hover">
               <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse-custom">
@@ -236,6 +246,20 @@ const HomePage: React.FC = () => {
       </div>
     </div>
   );
+
+
+   return (
+    <Router>
+      <Routes>
+        {/* Home Page */}
+        <Route path="/" element={<YourComponent />} />
+
+        {/* Reviews Page */}
+        <Route path="/reviews" element={<ReviewsPage />} />
+      </Routes>
+    </Router>
+  );
 };
+
 
 export default HomePage;
