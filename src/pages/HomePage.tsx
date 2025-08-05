@@ -1,14 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { Settings } from "../types";
-import { getSettings } from "../services/firebaseService";
-import {
-  ExternalLink,
-  MessageCircle,
-  Package,
-  MessageSquare,
-  Zap,
-  Shield,
-} from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { Settings } from '../types';
+import { getSettings } from '../services/firebaseService';
+import { ExternalLink, MessageCircle, Package, MessageSquare, Zap, Shield } from 'lucide-react';
 
 const HomePage: React.FC = () => {
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -22,28 +15,28 @@ const HomePage: React.FC = () => {
         } else {
           // Fallback to default settings if getSettings returns null
           setSettings({
-            adminPassword: "admin1234",
-            bannerImage: "",
-            bannerText: "",
-            bannerLink: "",
-            backgroundImage: "",
-            whatsappLink: "",
-            messengerLink: "",
-            socialLinks: [],
+            adminPassword: 'admin1234',
+            bannerImage: '',
+            bannerText: '',
+            bannerLink: '',
+            backgroundImage: '',
+            whatsappLink: '',
+            messengerLink: '',
+            socialLinks: []
           });
         }
       } catch (error) {
-        console.error("Error loading settings:", error);
+        console.error('Error loading settings:', error);
         // Set default settings if loading fails
         setSettings({
-          adminPassword: "admin1234",
-          bannerImage: "",
-          bannerText: "",
-          bannerLink: "",
-          backgroundImage: "",
-          whatsappLink: "",
-          messengerLink: "",
-          socialLinks: [],
+          adminPassword: 'admin1234',
+          bannerImage: '',
+          bannerText: '',
+          bannerLink: '',
+          backgroundImage: '',
+          whatsappLink: '',
+          messengerLink: '',
+          socialLinks: []
         });
       }
     };
@@ -52,28 +45,27 @@ const HomePage: React.FC = () => {
   }, []);
 
   const handleSocialClick = (url: string) => {
-    window.open(url, "_blank");
+    window.open(url, '_blank');
   };
 
   const getBackgroundStyle = () => {
     if (settings?.backgroundImage || settings?.mobileBackgroundImage) {
       const isMobile = window.innerWidth <= 768;
-      const bgImage =
-        isMobile && settings?.mobileBackgroundImage
-          ? settings.mobileBackgroundImage
-          : settings?.backgroundImage;
-
+      const bgImage = isMobile && settings?.mobileBackgroundImage 
+        ? settings.mobileBackgroundImage 
+        : settings?.backgroundImage;
+      
       if (bgImage) {
         return {
           backgroundImage: `url(${bgImage})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundAttachment: "fixed",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed'
         };
       }
     }
     return {
-      background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)'
     };
   };
 
@@ -85,7 +77,7 @@ const HomePage: React.FC = () => {
       <div className="relative z-10 min-h-screen">
         <div className="container mx-auto px-4 py-8 mobile-padding">
           {/* Banner Section */}
-          {settings?.bannerImage && settings.bannerImage.trim() !== "" && (
+          {settings?.bannerImage && settings.bannerImage.trim() !== '' && (
             <div className="mb-8 rounded-2xl overflow-hidden shadow-2xl fade-in">
               <div className="relative">
                 <img
@@ -93,23 +85,18 @@ const HomePage: React.FC = () => {
                   alt="Banner"
                   className="w-full h-64 md:h-80 object-cover"
                   onError={(e) => {
-                    console.error(
-                      "Banner image failed to load:",
-                      settings.bannerImage
-                    );
-                    e.currentTarget.style.display = "none";
+                    console.error('Banner image failed to load:', settings.bannerImage);
+                    e.currentTarget.style.display = 'none';
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                 <div className="absolute bottom-6 left-6 right-6 text-white">
-                  {settings.bannerText && settings.bannerText.trim() !== "" && (
-                    <h2 className="text-2xl md:text-3xl font-bold mb-2 text-shadow">
-                      {settings.bannerText}
-                    </h2>
+                  {settings.bannerText && settings.bannerText.trim() !== '' && (
+                    <h2 className="text-2xl md:text-3xl font-bold mb-2 text-shadow">{settings.bannerText}</h2>
                   )}
-                  {settings.bannerLink && settings.bannerLink.trim() !== "" && (
+                  {settings.bannerLink && settings.bannerLink.trim() !== '' && (
                     <button
-                      onClick={() => window.open(settings.bannerLink, "_blank")}
+                      onClick={() => window.open(settings.bannerLink, '_blank')}
                       className="inline-flex items-center gap-2 gradient-primary text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all duration-300 mobile-button"
                     >
                       <ExternalLink className="w-5 h-5" />
@@ -127,7 +114,8 @@ const HomePage: React.FC = () => {
               Welcome to BeyFans BD
             </h1>
             <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed text-shadow mobile-text">
-              Buy & Get Your Favourite Beyblade Products From BeyFans BD at Best Price and Create Your Best Beyblade Collection!
+              Your ultimate destination for premium Beyblade collections, accessories, and community reviews. 
+              Discover the latest releases and join the battle!
             </p>
           </div>
 
@@ -140,14 +128,12 @@ const HomePage: React.FC = () => {
                     <MessageCircle className="w-7 h-7 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white">
-                      WhatsApp Orders
-                    </h3>
+                    <h3 className="text-xl font-bold text-white">WhatsApp Orders</h3>
                     <p className="text-gray-300">Quick and easy ordering</p>
                   </div>
                 </div>
                 <button
-                  onClick={() => window.open(settings.whatsappLink, "_blank")}
+                  onClick={() => window.open(settings.whatsappLink, '_blank')}
                   className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-all duration-300 font-semibold mobile-button"
                 >
                   Chat with us on WhatsApp
@@ -167,7 +153,7 @@ const HomePage: React.FC = () => {
                   </div>
                 </div>
                 <button
-                  onClick={() => window.open(settings.messengerLink, "_blank")}
+                  onClick={() => window.open(settings.messengerLink, '_blank')}
                   className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-all duration-300 font-semibold mobile-button"
                 >
                   Message us on Facebook
@@ -182,36 +168,24 @@ const HomePage: React.FC = () => {
               <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse-custom">
                 <Package className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">
-                Premium Products
-              </h3>
-              <p className="text-gray-300">
-                Top Quality Beyblade Products at the Best Prices - Just for You!
-              </p>
+              <h3 className="text-xl font-bold text-white mb-2">Premium Products</h3>
+              <p className="text-gray-300">Authentic Beyblade products with quality guarantee</p>
             </div>
 
             <div className="glass-effect rounded-2xl p-6 text-center card-hover">
               <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse-custom">
                 <MessageSquare className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">
-                Beyfane BD Community Reviews
-              </h3>
-              <p className="text-gray-300">
-                Authentic Reviews From Varified Customers
-              </p>
+              <h3 className="text-xl font-bold text-white mb-2">Community Reviews</h3>
+              <p className="text-gray-300">Real reviews from real Beyblade enthusiasts</p>
             </div>
 
             <div className="glass-effect rounded-2xl p-6 text-center card-hover">
               <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse-custom">
                 <Zap className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">
-                Fast Delivery
-              </h3>
-              <p className="text-gray-300">
-                Quick & Secure Delivery All Over Bangladesh
-              </p>
+              <h3 className="text-xl font-bold text-white mb-2">Fast Delivery</h3>
+              <p className="text-gray-300">Quick and secure delivery across Bangladesh</p>
             </div>
           </div>
 
