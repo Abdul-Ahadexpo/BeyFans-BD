@@ -2,20 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { Product, Review, Settings, Category } from '../types';
 import { 
   getProducts, 
-  getReviews, 
-  getSettings, 
-  getCategories,
-  addProduct,
-  addReview,
-  updateProduct,
+  addProduct, 
+  updateProduct, 
   deleteProduct,
+  getReviews,
+  addReview,
   deleteReview,
+  getSettings,
   updateSettings,
+  getCategories,
   addCategory,
   updateCategory,
   deleteCategory
 } from '../services/firebaseService';
 import { useAuth } from '../contexts/AuthContext';
+import { uploadToImgbb } from '../services/imgbbService';
 import ImageUpload from '../components/ImageUpload';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { 
@@ -26,33 +27,43 @@ import {
   X, 
   Package, 
   MessageSquare, 
-  Settings as SettingsIcon,
+  Settings as SettingsIcon, 
   Tag,
   LogOut,
   HelpCircle,
-  Upload
+  Upload,
+  Eye,
+  EyeOff,
+  CheckCircle,
+  AlertCircle,
+  Info,
+  Smartphone,
+  Monitor,
+  Youtube,
+  DollarSign
 } from 'lucide-react';
-import { uploadToImgbb } from '../services/imgbbService';
 
 const AdminPage: React.FC = () => {
   const { logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'products' | 'reviews' | 'categories' | 'settings'>('products');
+  const [activeTab, setActiveTab] = useState('products');
   const [products, setProducts] = useState<Product[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showAddProduct, setShowAddProduct] = useState(false);
-  const [showAddCategory, setShowAddCategory] = useState(false);
-  const [showAddReview, setShowAddReview] = useState(false);
-  const [showHowToUse, setShowHowToUse] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+
+  // Form states
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingReview, setEditingReview] = useState<Review | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [uploadingBanner, setUploadingBanner] = useState(false);
-  const [uploadingBackground, setUploadingBackground] = useState(false);
-  const [uploadingMobileBackground, setUploadingMobileBackground] = useState(false);
-  
-  const [newProduct, setNewProduct] = useState({
+  const [showProductForm, setShowProductForm] = useState(false);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
+
+  // Product form
+  const [productForm, setProductForm] = useState({
     name: '',
     price: 0,
     beforePrice: 0,
@@ -62,1066 +73,1305 @@ const AdminPage: React.FC = () => {
     youtubeVideoUrl: ''
   });
 
-  const [newCategory, setNewCategory] = useState({
-    name: '',
-    productIds: [] as string[]
-  });
-
-  const [newReview, setNewReview] = useState({
+  // Review form
+  const [reviewForm, setReviewForm] = useState({
     userName: '',
     text: '',
     images: [] as string[]
   });
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [productsData, reviewsData, settingsData, categoriesData] = await Promise.all([
-          getProducts(),
-          getReviews(),
-          getSettings(),
-          getCategories()
-        ]);
-        
-        setProducts(productsData);
-        setReviews(reviewsData);
-        setSettings(settingsData);
-        setCategories(categoriesData);
-      } catch (error) {
-        console.error('Error loading admin data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Category form
+  const [categoryForm, setCategoryForm] = useState({
+    name: '',
+    productIds: [] as string[]
+  });
 
+  // Settings form
+  const [settingsForm, setSettingsForm] = useState({
+    bannerImage: '',
+    bannerText: '',
+    bannerLink: '',
+    backgroundImage: '',
+    mobileBackgroundImage: '',
+    whatsappLink: '',
+    messengerLink: '',
+    socialLinks: [] as string[],
+    adminPassword: ''
+  });
+
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [uploadingBackground, setUploadingBackground] = useState(false);
+  const [uploadingMobileBackground, setUploadingMobileBackground] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
     loadData();
   }, []);
 
-  const handleAddProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProduct.name.trim()) return;
-
+  const loadData = async () => {
+    setLoading(true);
     try {
-      const productId = await addProduct(newProduct);
-      const addedProduct: Product = {
-        id: productId,
-        ...newProduct,
-        beforePrice: newProduct.beforePrice || undefined,
-        youtubeVideoUrl: newProduct.youtubeVideoUrl || undefined,
-        createdAt: new Date()
-      };
+      const [productsData, reviewsData, categoriesData, settingsData] = await Promise.all([
+        getProducts(),
+        getReviews(),
+        getCategories(),
+        getSettings()
+      ]);
       
-      setProducts([addedProduct, ...products]);
-      setNewProduct({ name: '', price: 0, beforePrice: 0, description: '', category: [], images: [], youtubeVideoUrl: '' });
-      setShowAddProduct(false);
-    } catch (error) {
-      console.error('Error adding product:', error);
-      if (error instanceof Error && error.message.includes('PERMISSION_DENIED')) {
-        alert('Permission denied. Please check your Firebase Realtime Database rules. Go to Firebase Console → Realtime Database → Rules and ensure write permissions are enabled for the products node.');
-      } else {
-        alert('Failed to add product. Please try again.');
+      setProducts(productsData);
+      setReviews(reviewsData);
+      setCategories(categoriesData);
+      setSettings(settingsData);
+      
+      if (settingsData) {
+        setSettingsForm({
+          bannerImage: settingsData.bannerImage || '',
+          bannerText: settingsData.bannerText || '',
+          bannerLink: settingsData.bannerLink || '',
+          backgroundImage: settingsData.backgroundImage || '',
+          mobileBackgroundImage: settingsData.mobileBackgroundImage || '',
+          whatsappLink: settingsData.whatsappLink || '',
+          messengerLink: settingsData.messengerLink || '',
+          socialLinks: settingsData.socialLinks || [],
+          adminPassword: settingsData.adminPassword || 'admin1234'
+        });
       }
+    } catch (error) {
+      showNotification('error', 'Failed to load data');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleUpdateProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingProduct) return;
+  const showNotification = (type: 'success' | 'error' | 'info', message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 5000);
+  };
 
+  const resetProductForm = () => {
+    setProductForm({
+      name: '',
+      price: 0,
+      beforePrice: 0,
+      description: '',
+      category: [],
+      images: [],
+      youtubeVideoUrl: ''
+    });
+    setEditingProduct(null);
+    setShowProductForm(false);
+  };
+
+  const resetReviewForm = () => {
+    setReviewForm({
+      userName: '',
+      text: '',
+      images: []
+    });
+    setEditingReview(null);
+    setShowReviewForm(false);
+  };
+
+  const resetCategoryForm = () => {
+    setCategoryForm({
+      name: '',
+      productIds: []
+    });
+    setEditingCategory(null);
+    setShowCategoryForm(false);
+  };
+
+  const handleProductSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!productForm.name.trim() || productForm.price <= 0) {
+      showNotification('error', 'Please fill in all required fields');
+      return;
+    }
+
+    setSaving(true);
     try {
-      await updateProduct(editingProduct.id, editingProduct);
-      setProducts(products.map(p => p.id === editingProduct.id ? editingProduct : p));
-      setEditingProduct(null);
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, productForm);
+        showNotification('success', 'Product updated successfully');
+      } else {
+        await addProduct(productForm);
+        showNotification('success', 'Product added successfully');
+      }
+      resetProductForm();
+      loadData();
     } catch (error) {
-      console.error('Error updating product:', error);
-      alert('Failed to update product.');
+      showNotification('error', 'Failed to save product');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewForm.userName.trim() || !reviewForm.text.trim()) {
+      showNotification('error', 'Please fill in all required fields');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await addReview(reviewForm);
+      showNotification('success', 'Review added successfully');
+      resetReviewForm();
+      loadData();
+    } catch (error) {
+      showNotification('error', 'Failed to add review');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCategorySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!categoryForm.name.trim()) {
+      showNotification('error', 'Please enter category name');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      if (editingCategory) {
+        await updateCategory(editingCategory.id, categoryForm);
+        showNotification('success', 'Category updated successfully');
+      } else {
+        await addCategory(categoryForm);
+        showNotification('success', 'Category added successfully');
+      }
+      resetCategoryForm();
+      loadData();
+    } catch (error) {
+      showNotification('error', 'Failed to save category');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSettingsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await updateSettings(settingsForm);
+      showNotification('success', 'Settings updated successfully');
+      loadData();
+    } catch (error) {
+      showNotification('error', 'Failed to update settings');
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleDeleteProduct = async (id: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
-
+    
     try {
       await deleteProduct(id);
-      setProducts(products.filter(p => p.id !== id));
+      showNotification('success', 'Product deleted successfully');
+      loadData();
     } catch (error) {
-      console.error('Error deleting product:', error);
-      alert('Failed to delete product.');
+      showNotification('error', 'Failed to delete product');
     }
   };
 
   const handleDeleteReview = async (id: string) => {
     if (!confirm('Are you sure you want to delete this review?')) return;
-
+    
     try {
       await deleteReview(id);
-      setReviews(reviews.filter(r => r.id !== id));
+      showNotification('success', 'Review deleted successfully');
+      loadData();
     } catch (error) {
-      console.error('Error deleting review:', error);
-      alert('Failed to delete review.');
+      showNotification('error', 'Failed to delete review');
     }
   };
 
-  const handleUpdateSettings = async (updatedSettings: Partial<Settings>) => {
+  const handleDeleteCategory = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this category?')) return;
+    
     try {
-      await updateSettings(updatedSettings);
-      setSettings({ ...settings, ...updatedSettings } as Settings);
-      alert('Settings updated successfully!');
+      await deleteCategory(id);
+      showNotification('success', 'Category deleted successfully');
+      loadData();
     } catch (error) {
-      console.error('Error updating settings:', error);
-      alert('Failed to update settings.');
+      showNotification('error', 'Failed to delete category');
     }
   };
 
-  const handleAddCategory = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newCategory.name.trim()) return;
-
-    try {
-      const categoryId = await addCategory(newCategory);
-      const addedCategory: Category = {
-        id: categoryId,
-        ...newCategory
-      };
-      
-      setCategories([...categories, addedCategory]);
-      setNewCategory({ name: '', productIds: [] });
-      setShowAddCategory(false);
-    } catch (error) {
-      console.error('Error adding category:', error);
-      alert('Failed to add category.');
-    }
+  const editProduct = (product: Product) => {
+    setProductForm({
+      name: product.name,
+      price: product.price,
+      beforePrice: product.beforePrice || 0,
+      description: product.description,
+      category: product.category,
+      images: product.images,
+      youtubeVideoUrl: product.youtubeVideoUrl || ''
+    });
+    setEditingProduct(product);
+    setShowProductForm(true);
   };
 
-  const handleAddReview = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newReview.userName.trim() || !newReview.text.trim()) return;
-
-    try {
-      const reviewId = await addReview(newReview);
-      const addedReview: Review = {
-        id: reviewId,
-        ...newReview,
-        createdAt: new Date()
-      };
-      
-      setReviews([addedReview, ...reviews]);
-      setNewReview({ userName: '', text: '', images: [] });
-      setShowAddReview(false);
-    } catch (error) {
-      console.error('Error adding review:', error);
-      alert('Failed to add review. Please try again.');
-    }
+  const editCategory = (category: Category) => {
+    setCategoryForm({
+      name: category.name,
+      productIds: category.productIds
+    });
+    setEditingCategory(category);
+    setShowCategoryForm(true);
   };
 
-  const handleBannerImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setUploadingBanner(true);
+  const handleImageUpload = async (file: File, type: 'banner' | 'background' | 'mobileBackground') => {
+    const setUploading = type === 'banner' ? setUploadingBanner : 
+                        type === 'background' ? setUploadingBackground : 
+                        setUploadingMobileBackground;
+    
+    setUploading(true);
     try {
       const imageUrl = await uploadToImgbb(file);
-      setSettings({ ...settings!, bannerImage: imageUrl });
+      setSettingsForm(prev => ({
+        ...prev,
+        [type === 'banner' ? 'bannerImage' : 
+         type === 'background' ? 'backgroundImage' : 
+         'mobileBackgroundImage']: imageUrl
+      }));
+      showNotification('success', `${type} image uploaded successfully`);
     } catch (error) {
-      console.error('Error uploading banner image:', error);
-      alert('Failed to upload banner image. Please try again.');
+      showNotification('error', `Failed to upload ${type} image`);
     } finally {
-      setUploadingBanner(false);
+      setUploading(false);
     }
   };
 
-  const handleBackgroundImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setUploadingBackground(true);
-    try {
-      const imageUrl = await uploadToImgbb(file);
-      setSettings({ ...settings!, backgroundImage: imageUrl });
-    } catch (error) {
-      console.error('Error uploading background image:', error);
-      alert('Failed to upload background image. Please try again.');
-    } finally {
-      setUploadingBackground(false);
-    }
-  };
-
-  const handleMobileBackgroundImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setUploadingMobileBackground(true);
-    try {
-      const imageUrl = await uploadToImgbb(file);
-      setSettings({ ...settings!, mobileBackgroundImage: imageUrl });
-    } catch (error) {
-      console.error('Error uploading mobile background image:', error);
-      alert('Failed to upload mobile background image. Please try again.');
-    } finally {
-      setUploadingMobileBackground(false);
-    }
-  };
+  const tabs = [
+    { id: 'products', icon: Package, label: 'Products', count: products.length },
+    { id: 'reviews', icon: MessageSquare, label: 'Reviews', count: reviews.length },
+    { id: 'categories', icon: Tag, label: 'Categories', count: categories.length },
+    { id: 'settings', icon: SettingsIcon, label: 'Settings' },
+    { id: 'help', icon: HelpCircle, label: 'How to Use' }
+  ];
 
   if (loading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="min-h-screen gradient-dark flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen gradient-dark pb-20">
-      <div className="container mx-auto px-4 py-6 mobile-padding">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-white text-shadow">Admin Panel</h1>
-          <button
-            onClick={logout}
-            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-all duration-300 mobile-button"
-          >
-            <LogOut className="w-5 h-5" />
-            Logout
+      {/* Header */}
+      <div className="sticky top-0 z-30 glass-effect border-b border-gray-700">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
+            <button
+              onClick={logout}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Notification */}
+      {notification && (
+        <div className={`fixed top-20 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center gap-3 ${
+          notification.type === 'success' ? 'bg-green-600' :
+          notification.type === 'error' ? 'bg-red-600' : 'bg-blue-600'
+        } text-white`}>
+          {notification.type === 'success' && <CheckCircle className="w-5 h-5" />}
+          {notification.type === 'error' && <AlertCircle className="w-5 h-5" />}
+          {notification.type === 'info' && <Info className="w-5 h-5" />}
+          <span>{notification.message}</span>
+          <button onClick={() => setNotification(null)}>
+            <X className="w-4 h-4" />
           </button>
         </div>
+      )}
 
-        {/* Tabs */}
-        <div className="flex gap-1 mb-6 overflow-x-auto pb-2">
-          {[
-            { id: 'products', icon: Package, label: 'Products' },
-            { id: 'reviews', icon: MessageSquare, label: 'Reviews' },
-            { id: 'categories', icon: Tag, label: 'Categories' },
-            { id: 'settings', icon: SettingsIcon, label: 'Settings' },
-            { id: 'help', icon: HelpCircle, label: 'How to Use' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => {
-                if (tab.id === 'help') {
-                  setShowHowToUse(true);
-                } else {
-                  setActiveTab(tab.id as any);
-                }
-              }}
-              className={`flex items-center gap-1 px-2 md:px-4 py-2 rounded-lg whitespace-nowrap transition-colors text-sm mobile-button ${
-                activeTab === tab.id
-                  ? 'gradient-primary text-white shadow-lg'
-                  : 'glass-effect text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              <tab.icon className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="hidden sm:inline">{tab.label}</span>
-            </button>
-          ))}
+      <div className="container mx-auto px-4 py-6">
+        {/* Navigation Tabs */}
+        <div className="mb-8">
+          <div className="flex overflow-x-auto pb-2 gap-2">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg whitespace-nowrap transition-all duration-300 ${
+                  activeTab === tab.id
+                    ? 'gradient-primary text-white shadow-lg'
+                    : 'glass-effect text-gray-300 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <tab.icon className="w-5 h-5" />
+                <span className="font-medium">{tab.label}</span>
+                {tab.count !== undefined && (
+                  <span className="bg-white/20 text-xs px-2 py-1 rounded-full">
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Products Tab */}
-        {activeTab === 'products' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-white">Products Management</h2>
-              <button
-                onClick={() => setShowAddProduct(true)}
-                className="flex items-center gap-2 gradient-primary text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all duration-300 mobile-button"
-              >
-                <Plus className="w-5 h-5" />
-                Add Product
-              </button>
-            </div>
+        {/* Content */}
+        <div className="space-y-6">
+          {/* Products Tab */}
+          {activeTab === 'products' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-white">Manage Products</h2>
+                <button
+                  onClick={() => setShowProductForm(true)}
+                  className="flex items-center gap-2 gradient-primary text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Product
+                </button>
+              </div>
 
-            {/* Add Product Form */}
-            {showAddProduct && (
-              <div className="glass-effect rounded-xl p-6 slide-up">
-                <h3 className="text-xl font-bold text-white mb-4">Add New Product</h3>
-                <form onSubmit={handleAddProduct} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Product Name
-                      </label>
-                      <input
-                        type="text"
-                        value={newProduct.name}
-                        onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Current Price (৳)
-                      </label>
-                      <input
-                        type="number"
-                        value={newProduct.price}
-                        onChange={(e) => setNewProduct({ ...newProduct, price: Number(e.target.value) })}
-                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
-                        required
-                      />
-                    </div>
+              {/* Product Form */}
+              {showProductForm && (
+                <div className="glass-effect rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-white">
+                      {editingProduct ? 'Edit Product' : 'Add New Product'}
+                    </h3>
+                    <button
+                      onClick={resetProductForm}
+                      className="p-2 hover:bg-gray-700 rounded-full transition-colors"
+                    >
+                      <X className="w-5 h-5 text-white" />
+                    </button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Before Price (৳) - Optional
-                      </label>
-                      <input
-                        type="number"
-                        value={newProduct.beforePrice}
-                        onChange={(e) => setNewProduct({ ...newProduct, beforePrice: Number(e.target.value) })}
-                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
-                        placeholder="Original price (optional)"
-                      />
+                  <form onSubmit={handleProductSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          Product Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={productForm.name}
+                          onChange={(e) => setProductForm(prev => ({ ...prev, name: e.target.value }))}
+                          className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white"
+                          placeholder="Enter product name"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          Categories
+                        </label>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {categories.map(category => (
+                            <button
+                              key={category.id}
+                              type="button"
+                              onClick={() => {
+                                const isSelected = productForm.category.includes(category.name);
+                                setProductForm(prev => ({
+                                  ...prev,
+                                  category: isSelected
+                                    ? prev.category.filter(c => c !== category.name)
+                                    : [...prev.category, category.name]
+                                }));
+                              }}
+                              className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                                productForm.category.includes(category.name)
+                                  ? 'gradient-primary text-white'
+                                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                              }`}
+                            >
+                              {category.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          <DollarSign className="w-4 h-4 inline mr-1" />
+                          Current Price (৳) *
+                        </label>
+                        <input
+                          type="number"
+                          value={productForm.price}
+                          onChange={(e) => setProductForm(prev => ({ ...prev, price: Number(e.target.value) }))}
+                          className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white"
+                          placeholder="0"
+                          min="0"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          Before Price (৳) - Optional
+                        </label>
+                        <input
+                          type="number"
+                          value={productForm.beforePrice}
+                          onChange={(e) => setProductForm(prev => ({ ...prev, beforePrice: Number(e.target.value) }))}
+                          className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white"
+                          placeholder="0"
+                          min="0"
+                        />
+                      </div>
+                    </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">
-                        YouTube Review Video URL - Optional
+                        <Youtube className="w-4 h-4 inline mr-1" />
+                        YouTube Video URL - Optional
                       </label>
                       <input
                         type="url"
-                        value={newProduct.youtubeVideoUrl}
-                        onChange={(e) => setNewProduct({ ...newProduct, youtubeVideoUrl: e.target.value })}
-                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
+                        value={productForm.youtubeVideoUrl}
+                        onChange={(e) => setProductForm(prev => ({ ...prev, youtubeVideoUrl: e.target.value }))}
+                        className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white"
                         placeholder="https://www.youtube.com/watch?v=..."
                       />
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      value={newProduct.description}
-                      onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                      rows={3}
-                      className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white resize-none mobile-button"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Categories
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {categories.map(category => (
-                        <label key={category.id} className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={newProduct.category.includes(category.name)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setNewProduct({
-                                  ...newProduct,
-                                  category: [...newProduct.category, category.name]
-                                });
-                              } else {
-                                setNewProduct({
-                                  ...newProduct,
-                                  category: newProduct.category.filter(c => c !== category.name)
-                                });
-                              }
-                            }}
-                            className="rounded border-gray-600 focus:ring-green-500 bg-gray-800"
-                          />
-                          <span className="text-sm text-gray-300">{category.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Product Images
-                    </label>
-                    <ImageUpload
-                      images={newProduct.images}
-                      onImagesChange={(images) => setNewProduct({ ...newProduct, images })}
-                    />
-                  </div>
-
-                  <div className="flex gap-3">
-                    <button
-                      type="submit"
-                      className="flex-1 gradient-primary text-white py-3 rounded-lg hover:shadow-lg transition-all duration-300 mobile-button"
-                    >
-                      Add Product
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowAddProduct(false)}
-                      className="px-6 py-3 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700 transition-all duration-300 mobile-button"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-
-            {/* Products List */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 fade-in">
-              {products.map(product => (
-                <div key={product.id} className="glass-effect rounded-xl overflow-hidden card-hover">
-                  <img
-                    src={product.images[0] || 'https://via.placeholder.com/300x200?text=No+Image'}
-                    alt={product.name}
-                    className="w-full h-32 sm:h-48 object-cover"
-                  />
-                  <div className="p-3 md:p-4">
-                    <h3 className="font-bold text-sm md:text-lg text-white mb-2 line-clamp-2">{product.name}</h3>
-                    <div className="mb-2">
-                      {product.beforePrice && product.beforePrice > 0 && (
-                        <span className="text-gray-400 line-through text-sm mr-2">৳{product.beforePrice}</span>
-                      )}
-                      <span className="text-green-400 font-bold text-lg md:text-xl">৳{product.price}</span>
-                      <p className="text-xs text-gray-500 mt-1">Not fixed price</p>
-                    </div>
-                    <p className="text-gray-300 text-xs md:text-sm mb-3 line-clamp-2">{product.description}</p>
-                    
-                    <div className="flex gap-1 md:gap-2">
-                      <button
-                        onClick={() => setEditingProduct(product)}
-                        className="flex-1 gradient-primary text-white py-2 rounded-lg hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-1 mobile-button text-xs md:text-sm"
-                      >
-                        <Edit className="w-4 h-4" />
-                        <span className="hidden sm:inline">Edit</span>
-                      </button>
-                      <button
-                        onClick={() => handleDeleteProduct(product.id)}
-                        className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-all duration-300 flex items-center justify-center gap-1 mobile-button text-xs md:text-sm"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span className="hidden sm:inline">Delete</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Reviews Tab */}
-        {activeTab === 'reviews' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-white">Reviews Management</h2>
-              <button
-                onClick={() => setShowAddReview(true)}
-                className="flex items-center gap-2 gradient-primary text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all duration-300 mobile-button"
-              >
-                <Plus className="w-5 h-5" />
-                Add Review
-              </button>
-            </div>
-
-            {/* Add Review Form */}
-            {showAddReview && (
-              <div className="glass-effect rounded-xl p-6 slide-up">
-                <h3 className="text-xl font-bold text-white mb-4">Add New Review</h3>
-                <form onSubmit={handleAddReview} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Reviewer Name
+                        Description *
                       </label>
-                      <input
-                        type="text"
-                        value={newReview.userName}
-                        onChange={(e) => setNewReview({ ...newReview, userName: e.target.value })}
-                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
+                      <textarea
+                        value={productForm.description}
+                        onChange={(e) => setProductForm(prev => ({ ...prev, description: e.target.value }))}
+                        className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white"
+                        rows={4}
+                        placeholder="Enter product description"
                         required
                       />
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Review Text
-                    </label>
-                    <textarea
-                      value={newReview.text}
-                      onChange={(e) => setNewReview({ ...newReview, text: e.target.value })}
-                      rows={4}
-                      className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white resize-none mobile-button"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Review Images (Max 4)
-                    </label>
-                    <ImageUpload
-                      images={newReview.images}
-                      onImagesChange={(images) => setNewReview({ ...newReview, images })}
-                    />
-                  </div>
-
-                  <div className="flex gap-3">
-                    <button
-                      type="submit"
-                      className="flex-1 gradient-primary text-white py-3 rounded-lg hover:shadow-lg transition-all duration-300 mobile-button"
-                    >
-                      Add Review
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowAddReview(false)}
-                      className="px-6 py-3 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700 transition-all duration-300 mobile-button"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-            
-            <div className="space-y-3 md:space-y-4">
-              {reviews.map(review => (
-                <div key={review.id} className="glass-effect rounded-xl p-4 md:p-6 card-hover">
-                  <div className="flex items-start justify-between mb-4">
                     <div>
-                      <h3 className="font-bold text-sm md:text-lg text-white">{review.userName}</h3>
-                      <p className="text-sm text-gray-400">{review.createdAt.toLocaleDateString()}</p>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Product Images
+                      </label>
+                      <ImageUpload
+                        images={productForm.images}
+                        onImagesChange={(images) => setProductForm(prev => ({ ...prev, images }))}
+                        maxImages={6}
+                      />
                     </div>
-                    <button
-                      onClick={() => handleDeleteReview(review.id)}
-                      className="bg-red-600 text-white p-2 rounded-lg hover:bg-red-700 transition-all duration-300 mobile-button"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  
-                  <p className="text-gray-300 mb-4 text-sm md:text-base">{review.text}</p>
-                  
-                  {review.images.length > 0 && (
-                    <div className="grid grid-cols-2 gap-2">
-                      {review.images.map((image, index) => (
-                        <img
-                          key={index}
-                          src={image}
-                          alt={`Review ${index + 1}`}
-                          className="w-full aspect-square object-contain bg-gray-800 rounded-lg"
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
-        {/* Categories Tab */}
-        {activeTab === 'categories' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl md:text-2xl font-bold text-white">Categories Management</h2>
-              <button
-                onClick={() => setShowAddCategory(true)}
-                className="flex items-center gap-2 gradient-primary text-white px-3 md:px-4 py-2 rounded-lg hover:shadow-lg transition-all duration-300 mobile-button text-sm"
-              >
-                <Plus className="w-5 h-5" />
-                <span className="hidden sm:inline">Add Category</span>
-              </button>
-            </div>
-
-            {/* Add Category Form */}
-            {showAddCategory && (
-              <div className="glass-effect rounded-xl p-4 md:p-6 slide-up">
-                <h3 className="text-lg md:text-xl font-bold text-white mb-4">Add New Category</h3>
-                <form onSubmit={handleAddCategory} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Category Name
-                    </label>
-                    <input
-                      type="text"
-                      value={newCategory.name}
-                      onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-                      className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
-                      required
-                    />
-                  </div>
-
-                  <div className="flex gap-3">
-                    <button
-                      type="submit"
-                      className="flex-1 gradient-primary text-white py-3 rounded-lg hover:shadow-lg transition-all duration-300 mobile-button"
-                    >
-                      Add Category
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowAddCategory(false)}
-                      className="px-6 py-3 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700 transition-all duration-300 mobile-button"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-
-            {/* Categories List */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {categories.map(category => (
-                <div key={category.id} className="glass-effect rounded-xl p-4 md:p-6 card-hover">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-sm md:text-lg text-white">{category.name}</h3>
-                    <div className="flex gap-1 md:gap-2">
+                    <div className="flex gap-3 pt-4">
                       <button
-                        onClick={() => setEditingCategory(category)}
-                        className="gradient-primary text-white p-2 rounded-lg hover:shadow-lg transition-all duration-300 mobile-button"
+                        type="submit"
+                        disabled={saving}
+                        className="flex items-center gap-2 gradient-primary text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
                       >
-                        <Edit className="w-4 h-4" />
+                        {saving ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                        ) : (
+                          <Save className="w-4 h-4" />
+                        )}
+                        {editingProduct ? 'Update Product' : 'Add Product'}
                       </button>
                       <button
-                        onClick={async () => {
-                          if (confirm('Are you sure you want to delete this category?')) {
-                            try {
-                              await deleteCategory(category.id);
-                              setCategories(categories.filter(c => c.id !== category.id));
-                            } catch (error) {
-                              console.error('Error deleting category:', error);
-                              alert('Failed to delete category.');
-                            }
-                          }
-                        }}
-                        className="bg-red-600 text-white p-2 rounded-lg hover:bg-red-700 transition-all duration-300 mobile-button"
+                        type="button"
+                        onClick={resetProductForm}
+                        className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* Products List */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {products.map(product => (
+                  <div key={product.id} className="glass-effect rounded-xl p-4">
+                    <div className="aspect-video bg-gray-800 rounded-lg mb-3 overflow-hidden">
+                      {product.images[0] ? (
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-500">
+                          <Package className="w-8 h-8" />
+                        </div>
+                      )}
+                    </div>
+                    <h3 className="font-semibold text-white mb-2 line-clamp-2">{product.name}</h3>
+                    <div className="flex items-center gap-2 mb-2">
+                      {product.beforePrice && product.beforePrice > 0 && (
+                        <span className="text-sm text-gray-400 line-through">৳{product.beforePrice}</span>
+                      )}
+                      <span className="text-lg font-bold text-green-400">৳{product.price}</span>
+                    </div>
+                    <p className="text-gray-400 text-sm mb-3 line-clamp-2">{product.description}</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => editProduct(product)}
+                        className="flex items-center gap-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+                      >
+                        <Edit className="w-3 h-3" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteProduct(product.id)}
+                        className="flex items-center gap-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Reviews Tab */}
+          {activeTab === 'reviews' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-white">Manage Reviews</h2>
+                <button
+                  onClick={() => setShowReviewForm(true)}
+                  className="flex items-center gap-2 gradient-primary text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Review
+                </button>
+              </div>
+
+              {/* Review Form */}
+              {showReviewForm && (
+                <div className="glass-effect rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-white">Add New Review</h3>
+                    <button
+                      onClick={resetReviewForm}
+                      className="p-2 hover:bg-gray-700 rounded-full transition-colors"
+                    >
+                      <X className="w-5 h-5 text-white" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleReviewSubmit} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Customer Name *
+                      </label>
+                      <input
+                        type="text"
+                        value={reviewForm.userName}
+                        onChange={(e) => setReviewForm(prev => ({ ...prev, userName: e.target.value }))}
+                        className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white"
+                        placeholder="Enter customer name"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Review Text *
+                      </label>
+                      <textarea
+                        value={reviewForm.text}
+                        onChange={(e) => setReviewForm(prev => ({ ...prev, text: e.target.value }))}
+                        className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white"
+                        rows={4}
+                        placeholder="Enter review text"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Review Images
+                      </label>
+                      <ImageUpload
+                        images={reviewForm.images}
+                        onImagesChange={(images) => setReviewForm(prev => ({ ...prev, images }))}
+                        maxImages={4}
+                      />
+                    </div>
+
+                    <div className="flex gap-3 pt-4">
+                      <button
+                        type="submit"
+                        disabled={saving}
+                        className="flex items-center gap-2 gradient-primary text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
+                      >
+                        {saving ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                        ) : (
+                          <Save className="w-4 h-4" />
+                        )}
+                        Add Review
+                      </button>
+                      <button
+                        type="button"
+                        onClick={resetReviewForm}
+                        className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* Reviews List */}
+              <div className="space-y-4">
+                {reviews.map(review => (
+                  <div key={review.id} className="glass-effect rounded-xl p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h3 className="font-semibold text-white">{review.userName}</h3>
+                        <p className="text-sm text-gray-400">{review.createdAt.toLocaleDateString()}</p>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteReview(review.id)}
+                        className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
+                    <p className="text-gray-300 mb-3">{review.text}</p>
+                    {review.images.length > 0 && (
+                      <div className="flex gap-2">
+                        {review.images.slice(0, 3).map((image, index) => (
+                          <img
+                            key={index}
+                            src={image}
+                            alt={`Review ${index + 1}`}
+                            className="w-16 h-16 object-cover rounded-lg"
+                          />
+                        ))}
+                        {review.images.length > 3 && (
+                          <div className="w-16 h-16 bg-gray-700 rounded-lg flex items-center justify-center text-white text-sm">
+                            +{review.images.length - 3}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <p className="text-gray-400 text-sm">
-                    {category.productIds.length} products
-                  </p>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Settings Tab */}
-        {activeTab === 'settings' && settings && (
-          <div className="space-y-6">
-            <h2 className="text-xl md:text-2xl font-bold text-white">Settings Management</h2>
-            
-            <div className="glass-effect rounded-xl p-4 md:p-6">
-              <form className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Banner Image URL
-                  </label>
-                  <div className="space-y-2">
-                    <input
-                      type="url"
-                      value={settings.bannerImage || ''}
-                      onChange={(e) => setSettings({ ...settings, bannerImage: e.target.value })}
-                      placeholder="https://example.com/banner-image.jpg"
-                      className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
-                    />
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-400 text-sm">Or upload directly:</span>
-                      <label className="cursor-pointer">
-                        <div className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors mobile-button">
+          {/* Categories Tab */}
+          {activeTab === 'categories' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-white">Manage Categories</h2>
+                <button
+                  onClick={() => setShowCategoryForm(true)}
+                  className="flex items-center gap-2 gradient-primary text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Category
+                </button>
+              </div>
+
+              {/* Category Form */}
+              {showCategoryForm && (
+                <div className="glass-effect rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-white">
+                      {editingCategory ? 'Edit Category' : 'Add New Category'}
+                    </h3>
+                    <button
+                      onClick={resetCategoryForm}
+                      className="p-2 hover:bg-gray-700 rounded-full transition-colors"
+                    >
+                      <X className="w-5 h-5 text-white" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleCategorySubmit} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Category Name *
+                      </label>
+                      <input
+                        type="text"
+                        value={categoryForm.name}
+                        onChange={(e) => setCategoryForm(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white"
+                        placeholder="Enter category name"
+                        required
+                      />
+                    </div>
+
+                    <div className="flex gap-3 pt-4">
+                      <button
+                        type="submit"
+                        disabled={saving}
+                        className="flex items-center gap-2 gradient-primary text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
+                      >
+                        {saving ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                        ) : (
+                          <Save className="w-4 h-4" />
+                        )}
+                        {editingCategory ? 'Update Category' : 'Add Category'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={resetCategoryForm}
+                        className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* Categories List */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {categories.map(category => (
+                  <div key={category.id} className="glass-effect rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-white">{category.name}</h3>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => editCategory(category)}
+                          className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCategory(category.id)}
+                          className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-gray-400 text-sm">
+                      {category.productIds.length} products
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Settings Tab */}
+          {activeTab === 'settings' && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-bold text-white">App Settings</h2>
+
+              <form onSubmit={handleSettingsSubmit} className="space-y-6">
+                {/* Banner Settings */}
+                <div className="glass-effect rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4">Banner Settings</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Banner Image
+                      </label>
+                      <div className="flex gap-3">
+                        <input
+                          type="url"
+                          value={settingsForm.bannerImage}
+                          onChange={(e) => setSettingsForm(prev => ({ ...prev, bannerImage: e.target.value }))}
+                          className="flex-1 px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white"
+                          placeholder="Banner image URL"
+                        />
+                        <label className="flex items-center gap-2 px-4 py-3 gradient-primary text-white rounded-lg hover:shadow-lg transition-all cursor-pointer">
                           {uploadingBanner ? (
                             <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
                           ) : (
                             <Upload className="w-4 h-4" />
                           )}
-                          <span className="text-sm">Upload</span>
-                        </div>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleBannerImageUpload}
-                          className="hidden"
-                          disabled={uploadingBanner}
-                        />
+                          Upload
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'banner')}
+                            className="hidden"
+                            disabled={uploadingBanner}
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Banner Text
                       </label>
+                      <input
+                        type="text"
+                        value={settingsForm.bannerText}
+                        onChange={(e) => setSettingsForm(prev => ({ ...prev, bannerText: e.target.value }))}
+                        className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white"
+                        placeholder="Banner text"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Banner Link
+                      </label>
+                      <input
+                        type="url"
+                        value={settingsForm.bannerLink}
+                        onChange={(e) => setSettingsForm(prev => ({ ...prev, bannerLink: e.target.value }))}
+                        className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white"
+                        placeholder="Banner link URL"
+                      />
                     </div>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Banner Text
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.bannerText || ''}
-                    onChange={(e) => setSettings({ ...settings, bannerText: e.target.value })}
-                    placeholder="Enter banner text"
-                    className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Banner Link
-                  </label>
-                  <input
-                    type="url"
-                    value={settings.bannerLink || ''}
-                    onChange={(e) => setSettings({ ...settings, bannerLink: e.target.value })}
-                    placeholder="https://example.com/link"
-                    className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Background Image URL (Desktop)
-                  </label>
-                  <div className="space-y-2">
-                    <input
-                      type="url"
-                      value={settings.backgroundImage || ''}
-                      onChange={(e) => setSettings({ ...settings, backgroundImage: e.target.value })}
-                      placeholder="https://example.com/desktop-background.jpg"
-                      className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
-                    />
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-400 text-sm">Or upload directly:</span>
-                      <label className="cursor-pointer">
-                        <div className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors mobile-button">
+                {/* Background Settings */}
+                <div className="glass-effect rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4">Background Settings</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        <Monitor className="w-4 h-4 inline mr-1" />
+                        Desktop Background Image
+                      </label>
+                      <div className="flex gap-3">
+                        <input
+                          type="url"
+                          value={settingsForm.backgroundImage}
+                          onChange={(e) => setSettingsForm(prev => ({ ...prev, backgroundImage: e.target.value }))}
+                          className="flex-1 px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white"
+                          placeholder="Desktop background image URL"
+                        />
+                        <label className="flex items-center gap-2 px-4 py-3 gradient-primary text-white rounded-lg hover:shadow-lg transition-all cursor-pointer">
                           {uploadingBackground ? (
                             <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
                           ) : (
                             <Upload className="w-4 h-4" />
                           )}
-                          <span className="text-sm">Upload</span>
-                        </div>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleBackgroundImageUpload}
-                          className="hidden"
-                          disabled={uploadingBackground}
-                        />
-                      </label>
+                          Upload
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'background')}
+                            className="hidden"
+                            disabled={uploadingBackground}
+                          />
+                        </label>
+                      </div>
                     </div>
-                  </div>
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Background Image URL (Mobile - Vertical)
-                  </label>
-                  <div className="space-y-2">
-                    <input
-                      type="url"
-                      value={settings.mobileBackgroundImage || ''}
-                      onChange={(e) => setSettings({ ...settings, mobileBackgroundImage: e.target.value })}
-                      placeholder="https://example.com/mobile-background.jpg"
-                      className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
-                    />
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-400 text-sm">Or upload directly:</span>
-                      <label className="cursor-pointer">
-                        <div className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors mobile-button">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        <Smartphone className="w-4 h-4 inline mr-1" />
+                        Mobile Background Image
+                      </label>
+                      <div className="flex gap-3">
+                        <input
+                          type="url"
+                          value={settingsForm.mobileBackgroundImage}
+                          onChange={(e) => setSettingsForm(prev => ({ ...prev, mobileBackgroundImage: e.target.value }))}
+                          className="flex-1 px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white"
+                          placeholder="Mobile background image URL (vertical)"
+                        />
+                        <label className="flex items-center gap-2 px-4 py-3 gradient-primary text-white rounded-lg hover:shadow-lg transition-all cursor-pointer">
                           {uploadingMobileBackground ? (
                             <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
                           ) : (
                             <Upload className="w-4 h-4" />
                           )}
-                          <span className="text-sm">Upload</span>
-                        </div>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleMobileBackgroundImageUpload}
-                          className="hidden"
-                          disabled={uploadingMobileBackground}
-                        />
-                      </label>
+                          Upload
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'mobileBackground')}
+                            className="hidden"
+                            disabled={uploadingMobileBackground}
+                          />
+                        </label>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    WhatsApp Link
-                  </label>
-                  <input
-                    type="url"
-                    value={settings.whatsappLink || ''}
-                    onChange={(e) => setSettings({ ...settings, whatsappLink: e.target.value })}
-                    className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
-                  />
+                {/* Contact Settings */}
+                <div className="glass-effect rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4">Contact Settings</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        WhatsApp Link
+                      </label>
+                      <input
+                        type="url"
+                        value={settingsForm.whatsappLink}
+                        onChange={(e) => setSettingsForm(prev => ({ ...prev, whatsappLink: e.target.value }))}
+                        className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white"
+                        placeholder="https://wa.me/1234567890"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Messenger Link
+                      </label>
+                      <input
+                        type="url"
+                        value={settingsForm.messengerLink}
+                        onChange={(e) => setSettingsForm(prev => ({ ...prev, messengerLink: e.target.value }))}
+                        className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white"
+                        placeholder="https://m.me/yourpage"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Messenger Link
-                  </label>
-                  <input
-                    type="url"
-                    value={settings.messengerLink || ''}
-                    onChange={(e) => setSettings({ ...settings, messengerLink: e.target.value })}
-                    className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Admin Password
-                  </label>
-                  <input
-                    type="password"
-                    value={settings.adminPassword || ''}
-                    onChange={(e) => setSettings({ ...settings, adminPassword: e.target.value })}
-                    className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
-                  />
+                {/* Security Settings */}
+                <div className="glass-effect rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4">Security Settings</h3>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Admin Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={settingsForm.adminPassword}
+                        onChange={(e) => setSettingsForm(prev => ({ ...prev, adminPassword: e.target.value }))}
+                        className="w-full px-4 py-3 pr-12 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white"
+                        placeholder="Admin password"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <button
-                  type="button"
-                  onClick={() => handleUpdateSettings(settings)}
-                  className="w-full gradient-primary text-white py-3 rounded-lg hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2 mobile-button"
+                  type="submit"
+                  disabled={saving}
+                  className="flex items-center gap-2 gradient-primary text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
                 >
-                  <Save className="w-5 h-5" />
+                  {saving ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
                   Save Settings
                 </button>
               </form>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Edit Product Modal */}
-        {editingProduct && (
-          <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50">
-            <div className="glass-effect rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="sticky top-0 glass-effect p-4 border-b border-gray-600 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-white">Edit Product</h2>
-                <button
-                  onClick={() => setEditingProduct(null)}
-                  className="p-2 hover:bg-gray-700 rounded-full transition-colors"
-                >
-                  <X className="w-6 h-6 text-white" />
-                </button>
-              </div>
+          {/* Help Tab */}
+          {activeTab === 'help' && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-bold text-white">How to Use Admin Panel</h2>
+              
+              <div className="space-y-6">
+                {/* Getting Started */}
+                <div className="glass-effect rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <Info className="w-5 h-5 text-blue-400" />
+                    Getting Started
+                  </h3>
+                  <div className="space-y-3 text-gray-300">
+                    <p>Welcome to your Beyblade store admin panel! This guide will help you manage your store effectively.</p>
+                    <div className="bg-blue-900/20 border border-blue-600/30 rounded-lg p-4">
+                      <p className="text-blue-300"><strong>Important:</strong> Always save your changes before switching tabs or logging out.</p>
+                    </div>
+                  </div>
+                </div>
 
-              <div className="p-6">
-                <form onSubmit={handleUpdateProduct} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Products Management */}
+                <div className="glass-effect rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <Package className="w-5 h-5 text-green-400" />
+                    Managing Products
+                  </h3>
+                  <div className="space-y-4 text-gray-300">
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Product Name
-                      </label>
-                      <input
-                        type="text"
-                        value={editingProduct.name}
-                        onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
-                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
-                        required
-                      />
+                      <h4 className="font-semibold text-white mb-2">Adding a New Product:</h4>
+                      <ol className="list-decimal list-inside space-y-2 ml-4">
+                        <li>Click the "Add Product" button</li>
+                        <li>Fill in the product name (required)</li>
+                        <li>Select categories by clicking on them</li>
+                        <li>Set the current price (required)</li>
+                        <li>Optionally set a "before price" for discounts</li>
+                        <li>Add a YouTube video URL for product reviews</li>
+                        <li>Write a detailed description</li>
+                        <li>Upload product images (up to 6)</li>
+                        <li>Click "Add Product" to save</li>
+                      </ol>
                     </div>
+                    
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Current Price (৳)
-                      </label>
-                      <input
-                        type="number"
-                        value={editingProduct.price}
-                        onChange={(e) => setEditingProduct({ ...editingProduct, price: Number(e.target.value) })}
-                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
-                        required
-                      />
+                      <h4 className="font-semibold text-white mb-2">Pricing Tips:</h4>
+                      <ul className="list-disc list-inside space-y-1 ml-4">
+                        <li>Use "Before Price" to show discounts (crossed out)</li>
+                        <li>All prices automatically show "Not fixed price"</li>
+                        <li>Prices are displayed in Bangladeshi Taka (৳)</li>
+                      </ul>
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Before Price (৳) - Optional
-                      </label>
-                      <input
-                        type="number"
-                        value={editingProduct.beforePrice || 0}
-                        onChange={(e) => setEditingProduct({ ...editingProduct, beforePrice: Number(e.target.value) || undefined })}
-                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
-                        placeholder="Original price (optional)"
-                      />
+                      <h4 className="font-semibold text-white mb-2">YouTube Videos:</h4>
+                      <ul className="list-disc list-inside space-y-1 ml-4">
+                        <li>Paste any YouTube URL format (watch?v=, youtu.be/, embed)</li>
+                        <li>Videos will appear on the product details page</li>
+                        <li>Great for product reviews and demonstrations</li>
+                      </ul>
                     </div>
+                  </div>
+                </div>
+
+                {/* Reviews Management */}
+                <div className="glass-effect rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <MessageSquare className="w-5 h-5 text-purple-400" />
+                    Managing Reviews
+                  </h3>
+                  <div className="space-y-4 text-gray-300">
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        YouTube Review Video URL - Optional
-                      </label>
-                      <input
-                        type="url"
-                        value={editingProduct.youtubeVideoUrl || ''}
-                        onChange={(e) => setEditingProduct({ ...editingProduct, youtubeVideoUrl: e.target.value || undefined })}
-                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white mobile-button"
-                        placeholder="https://www.youtube.com/watch?v=..."
-                      />
+                      <h4 className="font-semibold text-white mb-2">Adding Customer Reviews:</h4>
+                      <ol className="list-decimal list-inside space-y-2 ml-4">
+                        <li>Click "Add Review" button</li>
+                        <li>Enter the customer's name</li>
+                        <li>Write the review text</li>
+                        <li>Upload review images (up to 4)</li>
+                        <li>Click "Add Review" to publish</li>
+                      </ol>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-semibold text-white mb-2">Review Image Features:</h4>
+                      <ul className="list-disc list-inside space-y-1 ml-4">
+                        <li>Small thumbnails display on review cards</li>
+                        <li>Hover over images for quick preview</li>
+                        <li>Click images to view full size</li>
+                        <li>Professional stacked display for multiple images</li>
+                      </ul>
                     </div>
                   </div>
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      value={editingProduct.description}
-                      onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
-                      rows={3}
-                      className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white resize-none mobile-button"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Categories
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {categories.map(category => (
-                        <label key={category.id} className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={editingProduct.category.includes(category.name)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setEditingProduct({
-                                  ...editingProduct,
-                                  category: [...editingProduct.category, category.name]
-                                });
-                              } else {
-                                setEditingProduct({
-                                  ...editingProduct,
-                                  category: editingProduct.category.filter(c => c !== category.name)
-                                });
-                              }
-                            }}
-                            className="rounded border-gray-600 focus:ring-green-500 bg-gray-800"
-                          />
-                          <span className="text-sm text-gray-300">{category.name}</span>
-                        </label>
-                      ))}
+                {/* Categories Management */}
+                <div className="glass-effect rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <Tag className="w-5 h-5 text-orange-400" />
+                    Managing Categories
+                  </h3>
+                  <div className="space-y-4 text-gray-300">
+                    <div>
+                      <h4 className="font-semibold text-white mb-2">Creating Categories:</h4>
+                      <ol className="list-decimal list-inside space-y-2 ml-4">
+                        <li>Click "Add Category" button</li>
+                        <li>Enter a descriptive category name</li>
+                        <li>Click "Add Category" to save</li>
+                        <li>Categories will appear when adding/editing products</li>
+                      </ol>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-semibold text-white mb-2">Category Examples:</h4>
+                      <ul className="list-disc list-inside space-y-1 ml-4">
+                        <li>Attack Type, Defense Type, Stamina Type</li>
+                        <li>Metal Fight, Burst, X Series</li>
+                        <li>Launchers, Accessories, Parts</li>
+                      </ul>
                     </div>
                   </div>
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Product Images
-                    </label>
-                    <ImageUpload
-                      images={editingProduct.images}
-                      onImagesChange={(images) => setEditingProduct({ ...editingProduct, images })}
-                    />
-                  </div>
+                {/* Settings Management */}
+                <div className="glass-effect rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <SettingsIcon className="w-5 h-5 text-red-400" />
+                    App Settings
+                  </h3>
+                  <div className="space-y-4 text-gray-300">
+                    <div>
+                      <h4 className="font-semibold text-white mb-2">Banner Settings:</h4>
+                      <ul className="list-disc list-inside space-y-1 ml-4">
+                        <li>Upload banner image or paste URL</li>
+                        <li>Add banner text for promotions</li>
+                        <li>Set banner link for call-to-action</li>
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-semibold text-white mb-2">Background Images:</h4>
+                      <ul className="list-disc list-inside space-y-1 ml-4">
+                        <li><strong>Desktop:</strong> Use landscape/horizontal images</li>
+                        <li><strong>Mobile:</strong> Use portrait/vertical images</li>
+                        <li>Upload directly or paste image URLs</li>
+                        <li>Images automatically switch based on device</li>
+                      </ul>
+                    </div>
 
-                  <div className="flex gap-3">
-                    <button
-                      type="submit"
-                      className="flex-1 gradient-primary text-white py-3 rounded-lg hover:shadow-lg transition-all duration-300 mobile-button"
-                    >
-                      Update Product
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingProduct(null)}
-                      className="px-6 py-3 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700 transition-all duration-300 mobile-button"
-                    >
-                      Cancel
-                    </button>
+                    <div>
+                      <h4 className="font-semibold text-white mb-2">Contact Settings:</h4>
+                      <ul className="list-disc list-inside space-y-1 ml-4">
+                        <li><strong>WhatsApp:</strong> Format: https://wa.me/8801234567890</li>
+                        <li><strong>Messenger:</strong> Format: https://m.me/yourpagename</li>
+                        <li>These links appear on product pages for orders</li>
+                      </ul>
+                    </div>
                   </div>
-                </form>
+                </div>
+
+                {/* Image Upload Guide */}
+                <div className="glass-effect rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <Upload className="w-5 h-5 text-cyan-400" />
+                    Image Upload Guide
+                  </h3>
+                  <div className="space-y-4 text-gray-300">
+                    <div>
+                      <h4 className="font-semibold text-white mb-2">Direct Upload (Recommended):</h4>
+                      <ul className="list-disc list-inside space-y-1 ml-4">
+                        <li>Click "Upload" buttons to select images from your device</li>
+                        <li>Images are automatically uploaded to Imgbb</li>
+                        <li>No need for external image hosting</li>
+                        <li>Supports JPG, PNG, GIF formats</li>
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-semibold text-white mb-2">Image Best Practices:</h4>
+                      <ul className="list-disc list-inside space-y-1 ml-4">
+                        <li><strong>Product Images:</strong> Square or landscape, high quality</li>
+                        <li><strong>Review Images:</strong> Any size, will be displayed as thumbnails</li>
+                        <li><strong>Banner:</strong> Wide landscape format (1200x400px recommended)</li>
+                        <li><strong>Background:</strong> High resolution, not too busy</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mobile Optimization */}
+                <div className="glass-effect rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <Smartphone className="w-5 h-5 text-pink-400" />
+                    Mobile Optimization Tips
+                  </h3>
+                  <div className="space-y-4 text-gray-300">
+                    <div>
+                      <h4 className="font-semibold text-white mb-2">Admin Panel on Mobile:</h4>
+                      <ul className="list-disc list-inside space-y-1 ml-4">
+                        <li>Horizontal scrolling tabs for easy navigation</li>
+                        <li>Touch-friendly buttons and forms</li>
+                        <li>Optimized layouts for small screens</li>
+                        <li>All features work perfectly on phones</li>
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-semibold text-white mb-2">Customer Experience:</h4>
+                      <ul className="list-disc list-inside space-y-1 ml-4">
+                        <li>Separate mobile background images</li>
+                        <li>Responsive product grids</li>
+                        <li>Touch-friendly product cards</li>
+                        <li>Optimized image viewing</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pro Tips */}
+                <div className="glass-effect rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-yellow-400" />
+                    Pro Tips for Success
+                  </h3>
+                  <div className="space-y-4 text-gray-300">
+                    <div>
+                      <h4 className="font-semibold text-white mb-2">Product Management:</h4>
+                      <ul className="list-disc list-inside space-y-1 ml-4">
+                        <li>Use high-quality, well-lit product photos</li>
+                        <li>Write detailed, engaging descriptions</li>
+                        <li>Add YouTube videos for better engagement</li>
+                        <li>Use "before price" to highlight discounts</li>
+                        <li>Organize products with relevant categories</li>
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-semibold text-white mb-2">Customer Reviews:</h4>
+                      <ul className="list-disc list-inside space-y-1 ml-4">
+                        <li>Add authentic customer reviews regularly</li>
+                        <li>Include photos of products in use</li>
+                        <li>Respond to customer feedback</li>
+                        <li>Use reviews to build trust</li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h4 className="font-semibold text-white mb-2">Store Optimization:</h4>
+                      <ul className="list-disc list-inside space-y-1 ml-4">
+                        <li>Update banner regularly with promotions</li>
+                        <li>Use attractive background images</li>
+                        <li>Keep contact information up to date</li>
+                        <li>Test on mobile devices regularly</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Troubleshooting */}
+                <div className="glass-effect rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 text-red-400" />
+                    Troubleshooting
+                  </h3>
+                  <div className="space-y-4 text-gray-300">
+                    <div>
+                      <h4 className="font-semibold text-white mb-2">Common Issues:</h4>
+                      <ul className="list-disc list-inside space-y-1 ml-4">
+                        <li><strong>Images not loading:</strong> Check internet connection, try re-uploading</li>
+                        <li><strong>Changes not saving:</strong> Ensure all required fields are filled</li>
+                        <li><strong>YouTube video not showing:</strong> Use direct YouTube URLs</li>
+                        <li><strong>Mobile layout issues:</strong> Clear browser cache</li>
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-semibold text-white mb-2">Best Practices:</h4>
+                      <ul className="list-disc list-inside space-y-1 ml-4">
+                        <li>Save your work frequently</li>
+                        <li>Test changes on different devices</li>
+                        <li>Keep backup of important images</li>
+                        <li>Use strong admin password</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* How to Use Modal */}
-        {showHowToUse && (
-          <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50">
-            <div className="glass-effect rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="sticky top-0 glass-effect p-4 border-b border-gray-600 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-white">How to Use Admin Panel</h2>
-                <button
-                  onClick={() => setShowHowToUse(false)}
-                  className="p-2 hover:bg-gray-700 rounded-full transition-colors"
-                >
-                  <X className="w-6 h-6 text-white" />
-                </button>
-              </div>
-
-              <div className="p-6 space-y-6 text-white">
-                <div>
-                  <h3 className="text-lg font-bold text-green-400 mb-3">📦 Products Management</h3>
-                  <ul className="space-y-2 text-sm text-gray-300">
-                    <li>• Click "Add Product" to create new products</li>
-                    <li>• Fill in product name, current price, and description</li>
-                    <li>• Add "Before Price" to show crossed-out original price</li>
-                    <li>• Select categories by checking boxes</li>
-                    <li>• Upload up to 4 product images using the image uploader</li>
-                    <li>• Add YouTube review video URL (optional)</li>
-                    <li>• Use "Edit" button to modify existing products</li>
-                    <li>• Use "Delete" button to remove products</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-bold text-green-400 mb-3">⭐ Reviews Management</h3>
-                  <ul className="space-y-2 text-sm text-gray-300">
-                    <li>• Click "Add Review" to create customer reviews</li>
-                    <li>• Enter reviewer name and review text</li>
-                    <li>• Upload up to 4 review images</li>
-                    <li>• Reviews will appear on the Reviews page</li>
-                    <li>• Use "Delete" button to remove inappropriate reviews</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-bold text-green-400 mb-3">🏷️ Categories Management</h3>
-                  <ul className="space-y-2 text-sm text-gray-300">
-                    <li>• Click "Add Category" to create product categories</li>
-                    <li>• Enter category name (e.g., "Burst Beys", "Metal Fight")</li>
-                    <li>• Categories will appear as filter options on Products page</li>
-                    <li>• Assign products to categories when adding/editing products</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-bold text-green-400 mb-3">⚙️ Settings Management</h3>
-                  <ul className="space-y-2 text-sm text-gray-300">
-                    <li>• <strong>Banner Image:</strong> Upload or paste URL for homepage banner</li>
-                    <li>• <strong>Banner Text:</strong> Text displayed on banner</li>
-                    <li>• <strong>Banner Link:</strong> URL when banner is clicked</li>
-                    <li>• <strong>Background Image:</strong> Homepage background image</li>
-                    <li>• <strong>WhatsApp Link:</strong> Your WhatsApp business link</li>
-                    <li>• <strong>Messenger Link:</strong> Your Facebook Messenger link</li>
-                    <li>• <strong>Admin Password:</strong> Change admin login password</li>
-                    <li>• Click "Save Settings" to apply changes</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-bold text-green-400 mb-3">📱 Mobile Tips</h3>
-                  <ul className="space-y-2 text-sm text-gray-300">
-                    <li>• All features work on mobile devices</li>
-                    <li>• Swipe horizontally to see all tabs</li>
-                    <li>• Tap and hold images to view full size</li>
-                    <li>• Use "Upload" buttons for direct image uploads</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-bold text-green-400 mb-3">💡 Pro Tips</h3>
-                  <ul className="space-y-2 text-sm text-gray-300">
-                    <li>• Use high-quality images for better customer experience</li>
-                    <li>• Write detailed product descriptions</li>
-                    <li>• Set "Before Price" higher than "Current Price" for discount effect</li>
-                    <li>• Add YouTube review videos to build trust</li>
-                    <li>• Regularly add customer reviews to increase credibility</li>
-                    <li>• Update WhatsApp/Messenger links for easy customer contact</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
