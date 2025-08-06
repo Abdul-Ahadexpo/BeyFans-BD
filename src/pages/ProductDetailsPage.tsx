@@ -208,7 +208,7 @@ const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({ productId, onBa
                   {product.currentPrice || product.price} TK
                 </span>
               </div>
-              <p className="text-sm text-gray-300">Not fixed price</p>
+              <p className="text-sm text-red-300">Not fixed price</p>
             </div>
 
             {/* Description */}
