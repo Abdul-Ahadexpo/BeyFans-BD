@@ -46,10 +46,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onViewProduct }) => 
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
               {product.beforePrice && product.beforePrice > 0 && (
-                <span className="text-sm text-gray-400 line-through">৳{product.beforePrice}</span>
+                <span className="text-sm text-gray-400 line-through">{product.beforePrice}TK</span>
               )}
               <span className="text-xl md:text-2xl font-bold text-green-400">
-                ৳{product.price}
+                {product.price}TK
               </span>
             </div>
             <span className="text-xs text-gray-500">Not fixed price</span>
