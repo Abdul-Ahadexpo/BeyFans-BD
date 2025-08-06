@@ -33,7 +33,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
 
   const handleWhatsAppOrder = () => {
     if (whatsappLink) {
-      const message = `Hi! I'm interested in ordering: ${product.name} - ৳${product.price}`;
+      const message = `Hi! I'm interested in ordering: ${product.name} - ${product.price}TK`;
       window.open(`${whatsappLink}?text=${encodeURIComponent(message)}`, '_blank');
     }
   };
@@ -110,7 +110,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
             </div>
 
             <div className="text-3xl font-bold text-green-400">
-              ৳{product.price}
+              {product.price}TK
             </div>
 
             <div>
