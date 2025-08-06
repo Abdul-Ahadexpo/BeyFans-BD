@@ -118,6 +118,7 @@ export const getReviews = async (): Promise<Review[]> => {
         .map(key => ({
           id: key,
           ...reviewsData[key],
+          images: reviewsData[key].images || [],
           createdAt: new Date(reviewsData[key].createdAt)
         }))
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
