@@ -52,7 +52,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onViewProduct }) => 
                 {product.price}TK
               </span>
             </div>
-            <span className="text-xs text-gray-500">Not fixed price</span>
+            <span className="text-xs text-red-300">Not fixed price</span>
           </div>
           
           <button
