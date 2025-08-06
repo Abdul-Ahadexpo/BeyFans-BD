@@ -504,7 +504,7 @@ const AdminPage: React.FC = () => {
                       <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
                           <DollarSign className="w-4 h-4 inline mr-1" />
-                          Current Price (৳) *
+                          Current Price (TK) *
                         </label>
                         <input
                           type="number"
@@ -519,7 +519,7 @@ const AdminPage: React.FC = () => {
 
                       <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
-                          Before Price (৳) - Optional
+                          Before Price (TK) - Optional
                         </label>
                         <input
                           type="number"
@@ -616,9 +616,9 @@ const AdminPage: React.FC = () => {
                     <h3 className="font-semibold text-white mb-2 line-clamp-2">{product.name}</h3>
                     <div className="flex items-center gap-2 mb-2">
                       {product.beforePrice && product.beforePrice > 0 && (
-                        <span className="text-sm text-gray-400 line-through">৳{product.beforePrice}</span>
+                        <span className="text-sm text-gray-400 line-through">{product.beforePrice}TK</span>
                       )}
-                      <span className="text-lg font-bold text-green-400">৳{product.price}</span>
+                      <span className="text-lg font-bold text-green-400">{product.price}TK</span>
                     </div>
                     <p className="text-gray-400 text-sm mb-3 line-clamp-2">{product.description}</p>
                     <div className="flex gap-2">
@@ -1132,7 +1132,7 @@ const AdminPage: React.FC = () => {
                       <ul className="list-disc list-inside space-y-1 ml-4">
                         <li>Use "Before Price" to show discounts (crossed out)</li>
                         <li>All prices automatically show "Not fixed price"</li>
-                        <li>Prices are displayed in Bangladeshi Taka (৳)</li>
+                        <li>Prices are displayed in Bangladeshi Taka (৳/TK)</li>
                       </ul>
                     </div>
 
