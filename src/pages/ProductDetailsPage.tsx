@@ -14,6 +14,7 @@ const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({ productId, onBa
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
   useEffect(() => {
     const loadProductAndSettings = async () => {
@@ -60,6 +61,11 @@ const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({ productId, onBa
     if (product && product.images.length > 1) {
       setCurrentImageIndex((prev) => (prev - 1 + product.images.length) % product.images.length);
     }
+  };
+
+  const truncateDescription = (text: string, maxLength: number = 369) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength);
   };
 
   if (loading) {
@@ -195,11 +201,11 @@ const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({ productId, onBa
               <div className="flex items-center gap-3 mb-2">
                 {product.beforePrice && (
                   <span className="text-2xl text-gray-400 line-through">
-                    ${product.beforePrice}
+                    {product.beforePrice} TK
                   </span>
                 )}
                 <span className="text-3xl lg:text-4xl font-bold text-green-400">
-                  ${product.currentPrice || product.price}
+                  {product.currentPrice || product.price} TK
                 </span>
               </div>
               <p className="text-sm text-gray-300">Not fixed price</p>
@@ -209,7 +215,21 @@ const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({ productId, onBa
             {product.description && (
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
                 <h3 className="text-xl font-semibold mb-3">Description</h3>
-                <p className="text-gray-300 leading-relaxed">{product.description}</p>
+                <p className="text-gray-300 leading-relaxed">
+                  {showFullDescription 
+                    ? product.description 
+                    : truncateDescription(product.description)
+                  }
+                  {product.description.length > 369 && !showFullDescription && '...'}
+                </p>
+                {product.description.length > 369 && (
+                  <button
+                    onClick={() => setShowFullDescription(!showFullDescription)}
+                    className="mt-3 text-green-400 hover:text-green-300 transition-colors font-medium"
+                  >
+                    {showFullDescription ? 'Show Less' : 'Show More'}
+                  </button>
+                )}
               </div>
             )}
 
