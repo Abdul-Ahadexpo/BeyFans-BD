@@ -4,8 +4,8 @@ import { getSettings, getCategories } from "../services/firebaseService";
 import {
   ExternalLink,
   MessageCircle,
-  Package,
-  MessageSquare,
+  PackageCheck,
+  UsersRound,
   Zap,
   Shield,
 } from "lucide-react";
@@ -187,11 +187,13 @@ const HomePage: React.FC = () => {
             )}
           </div>
 
+
+          
           {/* Features Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 fade-in">
             <div className="glass-effect rounded-2xl p-6 text-center card-hover">
               <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse-custom">
-                <Package className="w-8 h-8 text-white" />
+                <PackageCheck className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-white mb-2">
                 Premium Products
@@ -203,10 +205,10 @@ const HomePage: React.FC = () => {
 
             <div className="glass-effect rounded-2xl p-6 text-center card-hover">
               <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse-custom">
-                <MessageSquare className="w-8 h-8 text-white" />
+                <UsersRound className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-white mb-2">
-                Beyfane BD Community Reviews
+               Our Community Reviews
               </h3>
               <p className="text-gray-300">
                 Authentic Reviews From Varified Customers
