@@ -199,7 +199,7 @@ const HomePage: React.FC = () => {
                 Better Products
               </h3>
               <p className="text-gray-300">
-                Top Quality Beyblade Products at the Best Prices - Just for You ✓
+                Top Quality Beyblade Products at the Best Prices Just for You ✓
               </p>
             </div>
 
