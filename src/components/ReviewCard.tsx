@@ -6,10 +6,16 @@ interface ReviewCardProps {
   review: Review;
 }
 
+// ✅ Helper function to truncate text
+const truncateText = (text: string, length: number = 208): string => {
+  return text.length > length ? text.slice(0, length) : text;
+};
+
 const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
   const [showImageModal, setShowImageModal] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showImagePreview, setShowImagePreview] = useState(false);
+  const [showFullText, setShowFullText] = useState(false); // ✅ Fixed error
 
   const openImageModal = (index: number) => {
     setCurrentImageIndex(index);
@@ -44,7 +50,20 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
           </div>
         </div>
 
-        <p className="text-gray-300 leading-relaxed mb-4">{review.text}</p>
+        <div className="mb-4">
+          <p className="text-gray-300 leading-relaxed">
+            {showFullText ? review.text : truncateText(review.text)}
+            {review.text.length > 208 && !showFullText && '...'}
+          </p>
+          {review.text.length > 208 && (
+            <button
+              onClick={() => setShowFullText(!showFullText)}
+              className="mt-2 text-green-400 hover:text-green-300 transition-colors text-sm font-medium"
+            >
+              {showFullText ? 'Show Less' : 'Show More'}
+            </button>
+          )}
+        </div>
 
         {/* Review Images */}
         {review.images.length > 0 && (
