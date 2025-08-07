@@ -223,7 +223,7 @@ const HomePage: React.FC = () => {
                 Fast Delivery
               </h3>
               <p className="text-gray-300">
-                Quick & Secure Delivery All Over Bangladesh
+                Safe and Secure Delivery All Over Bangladesh
               </p>
             </div>
           </div>
