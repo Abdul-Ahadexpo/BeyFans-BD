@@ -211,7 +211,7 @@ const HomePage: React.FC = () => {
                Our Community Reviews
               </h3>
               <p className="text-gray-300">
-                Authentic Reviews From Varified Customers
+              Honest Reviews From Real Customers
               </p>
             </div>
 
