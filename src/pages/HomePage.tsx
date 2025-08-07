@@ -6,7 +6,7 @@ import {
   MessageCircle,
   PackageCheck,
   UsersRound,
-  Zap,
+  Truck,
   Shield,
 } from "lucide-react";
 
@@ -135,7 +135,7 @@ const HomePage: React.FC = () => {
           {/* Welcome Section */}
           <div className="text-center mb-12 slide-up">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 text-shadow">
-              Welcome to BeyFans BD
+             Get Better Than You Expect
             </h1>
             <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed text-shadow mobile-text">
               Buy & Get Your Favourite Beyblade Products From BeyFans BD at Best Price and Create Your Best Beyblade Collection!
@@ -196,7 +196,7 @@ const HomePage: React.FC = () => {
                 <PackageCheck className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-white mb-2">
-                Premium Products
+                Better Products
               </h3>
               <p className="text-gray-300">
                 Top Quality Beyblade Products at the Best Prices - Just for You!
@@ -217,7 +217,7 @@ const HomePage: React.FC = () => {
 
             <div className="glass-effect rounded-2xl p-6 text-center card-hover">
               <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse-custom">
-                <Zap className="w-8 h-8 text-white" />
+                <Truck className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-white mb-2">
                 Fast Delivery
