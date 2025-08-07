@@ -134,9 +134,12 @@ const HomePage: React.FC = () => {
 
           {/* Welcome Section */}
           <div className="text-center mb-12 slide-up">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 text-shadow">
-             Get Better Than You Expect
-            </h1>
+            
+               <h1 className="text-4xl md:text-5xl font-bungee text-white mb-4 text-shadow">
+                  Get Better Than You Expect
+               </h1>
+
+            
             <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed text-shadow mobile-text">
               Buy & Get Your Favourite Beyblade Products From BeyFans BD at Best Price and Create Your Best Beyblade Collection!
             </p>
