@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Settings } from "../types";
-import { getSettings } from "../services/firebaseService";
+import { Settings, Category } from "../types";
+import { getSettings, getCategories } from "../services/firebaseService";
 import {
   ExternalLink,
   MessageCircle,
@@ -12,11 +12,16 @@ import {
 
 const HomePage: React.FC = () => {
   const [settings, setSettings] = useState<Settings | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
-    const loadSettings = async () => {
+    const loadData = async () => {
       try {
-        const settingsData = await getSettings();
+        const [settingsData, categoriesData] = await Promise.all([
+          getSettings(),
+          getCategories()
+        ]);
+        
         if (settingsData) {
           setSettings(settingsData);
         } else {
@@ -27,13 +32,18 @@ const HomePage: React.FC = () => {
             bannerText: "",
             bannerLink: "",
             backgroundImage: "",
+            mobileBackgroundImage: "",
             whatsappLink: "",
             messengerLink: "",
             socialLinks: [],
           });
         }
+        
+        // Filter categories that have both image and description
+        const featuredCategories = categoriesData.filter(cat => cat.image && cat.description);
+        setCategories(featuredCategories);
       } catch (error) {
-        console.error("Error loading settings:", error);
+        console.error("Error loading data:", error);
         // Set default settings if loading fails
         setSettings({
           adminPassword: "admin1234",
@@ -41,6 +51,7 @@ const HomePage: React.FC = () => {
           bannerText: "",
           bannerLink: "",
           backgroundImage: "",
+          mobileBackgroundImage: "",
           whatsappLink: "",
           messengerLink: "",
           socialLinks: [],
@@ -48,7 +59,7 @@ const HomePage: React.FC = () => {
       }
     };
 
-    loadSettings();
+    loadData();
   }, []);
 
   const handleSocialClick = (url: string) => {
@@ -195,7 +206,7 @@ const HomePage: React.FC = () => {
                 <MessageSquare className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-white mb-2">
-                Our Community Reviews
+                Beyfane BD Community Reviews
               </h3>
               <p className="text-gray-300">
                 Authentic Reviews From Varified Customers
@@ -214,6 +225,58 @@ const HomePage: React.FC = () => {
               </p>
             </div>
           </div>
+
+          {/* Category Cards */}
+          {categories.length > 0 && (
+            <div className="mb-12 fade-in">
+              <h2 className="text-3xl font-bold text-white mb-8 text-center text-shadow">
+                Shop by Category
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {categories.slice(0, 3).map(category => (
+                  <div key={category.id} className="glass-effect rounded-2xl overflow-hidden card-hover">
+                    {category.image && (
+                      <div className="relative h-48 overflow-hidden">
+                        <img
+                          src={category.image}
+                          alt={category.name}
+                          className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                          onError={(e) => {
+                            console.error('Category image failed to load:', category.image);
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                        <div className="absolute bottom-4 left-4 right-4">
+                          <h3 className="text-xl font-bold text-white mb-1 text-shadow">
+                            {category.name}
+                          </h3>
+                        </div>
+                      </div>
+                    )}
+                    <div className="p-6">
+                      {!category.image && (
+                        <h3 className="text-xl font-bold text-white mb-3 text-center">
+                          {category.name}
+                        </h3>
+                      )}
+                      {category.description && (
+                        <p className="text-gray-300 text-sm leading-relaxed mb-4">
+                          {category.description}
+                        </p>
+                      )}
+                      <button
+                        onClick={() => window.location.hash = 'products'}
+                        className="w-full gradient-primary text-white py-3 rounded-lg hover:shadow-lg transition-all duration-300 font-semibold mobile-button"
+                      >
+                        Explore {category.name}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Social Links */}
           {settings?.socialLinks && settings.socialLinks.length > 0 && (
