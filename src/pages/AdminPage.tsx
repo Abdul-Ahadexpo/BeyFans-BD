@@ -1131,7 +1131,7 @@ const AdminPage: React.FC = () => {
                       <h4 className="font-semibold text-white mb-2">Pricing Tips:</h4>
                       <ul className="list-disc list-inside space-y-1 ml-4">
                         <li>Use "Before Price" to show discounts (crossed out)</li>
-                        <li>All prices automatically show "Not fixed price"</li>
+                        <li>All prices automatically show "Price not fixed"</li>
                         <li>Prices are displayed in Bangladeshi Taka (৳/TK)</li>
                       </ul>
                     </div>

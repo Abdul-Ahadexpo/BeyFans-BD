@@ -200,15 +200,15 @@ const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({ productId, onBa
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
               <div className="flex items-center gap-3 mb-2">
                 {product.beforePrice && (
-                  <span className="text-2xl text-gray-400 line-through">
-                    {product.beforePrice} TK
-                  </span>
+                   <span className="text-2xl text-[#d63c0d] line-through">
+                     {product.beforePrice} TK
+                   </span>
                 )}
                 <span className="text-3xl lg:text-4xl font-bold text-green-400">
                   {product.currentPrice || product.price} TK
                 </span>
               </div>
-              <p className="text-sm text-red-300">Not fixed price</p>
+                <span className="text-xs text-yellow-300">Price not fixed</span>
             </div>
 
             {/* Description */}
