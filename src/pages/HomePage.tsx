@@ -136,7 +136,7 @@ const HomePage: React.FC = () => {
           <div className="text-center mb-12 slide-up">
             
                <h1 className="text-4xl md:text-5xl font-bungee text-white mb-4 text-shadow">
-                  Get Better Than Expect
+                  Get Better Than Expected
                </h1>
 
             
