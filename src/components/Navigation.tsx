@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Package, MessageSquare, Settings, Shield, LogIn } from 'lucide-react';
+import { Home, Package, MessageSquare, Star, Settings, Shield, LogIn } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface NavigationProps {
@@ -13,7 +13,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
   const tabs = [
     { id: 'home', icon: Home, label: 'Home' },
     { id: 'products', icon: Package, label: 'Products' },
-    { id: 'reviews', icon: MessageSquare, label: 'Reviews' },
+    { id: 'reviews', icon: Star, label: 'Reviews' },
     ...(isAdmin ? [{ id: 'admin', icon: Shield, label: 'Admin' }] : [{ id: 'admin', icon: LogIn, label: 'Login' }]),
   ];
 
