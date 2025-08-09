@@ -4,6 +4,7 @@ import { getSettings, getCategories } from "../services/firebaseService";
 import {
   ExternalLink,
   MessageCircle,
+  MessageSquareMore,
   PackageCheck,
   UsersRound,
   Truck,
@@ -135,13 +136,13 @@ const HomePage: React.FC = () => {
           {/* Welcome Section */}
           <div className="text-center mb-12 slide-up">
             
-               <h1 className="text-4xl md:text-5xl font-bungee text-white mb-4 text-shadow">
+               <h1 className="text-4xl md:text-5xl font-poetsen text-white mb-4 text-shadow">
                   Get Better Than Expected
                </h1>
 
             
             <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed text-shadow mobile-text">
-              Buy & Get Your Favourite Beyblade Products From BeyFans BD at Best Price and Create Your Best Beyblade Collection!
+              Buy & Get Your Favourite Beyblade Products From BeyFans BD at Best Price and Create Your Best Beyblade Collection ✓
             </p>
           </div>
 
@@ -173,7 +174,7 @@ const HomePage: React.FC = () => {
               <div className="glass-effect rounded-2xl p-6 card-hover">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                    <MessageCircle className="w-7 h-7 text-white" />
+                    <MessageSquareMore className="w-7 h-7 text-white" />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white">Messenger</h3>
