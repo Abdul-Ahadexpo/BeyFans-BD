@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-       bungee: ['"Bungee"', 'cursive'],
+       poetsen: ['"Poetsen One"', 'cursive'],
       },
     }
   },
