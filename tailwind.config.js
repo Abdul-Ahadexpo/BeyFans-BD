@@ -4,7 +4,12 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-       poetsen: ['"Poetsen One"', 'cursive'],
+      bungee: ['"Bungee"', 'sans-serif'],
+        carter: ['"Carter One"', 'cursive'],
+        changa: ['"Changa One"', 'sans-serif'],
+        lilita: ['"Lilita One"', 'sans-serif'],
+        passion: ['"Passion One"', 'sans-serif'],
+        poetsen: ['"Poetsen One"', 'sans-serif'],
       },
     }
   },
