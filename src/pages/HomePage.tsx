@@ -136,7 +136,7 @@ const HomePage: React.FC = () => {
           {/* Welcome Section */}
           <div className="text-center mb-12 slide-up">
             
-               <h1 className="text-4xl md:text-5xl font-poetsen text-white mb-4 text-shadow">
+               <h1 className="text-4xl md:text-5xl font-changa text-white mb-4 text-shadow">
                   Get Better Than Expected
                </h1>
 
