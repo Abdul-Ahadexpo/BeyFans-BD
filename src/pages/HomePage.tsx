@@ -142,7 +142,7 @@ const HomePage: React.FC = () => {
 
             
             <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed text-shadow mobile-text">
-              Buy & Get Your Favourite Beyblade Products From BeyFans BD at Best Price and Create Your Best Beyblade Collection ✓
+              Buy & Get Your Favourite Beyblade Products From Our Store BeyFans BD Shop at Best Price and Create Your Best Beyblade Collection ✓
             </p>
           </div>
 
